@@ -84,13 +84,21 @@ class PermissionMiddleware implements MiddlewareInterface
         $hasPermission = $this->cache->get($userPermCacheKey);
 
         if ($hasPermission === null) {
-            $hasPermission = Db::table('sys_admin as a')
-                ->join('sys_admin_role as ar', 'a.admin_code', '=', 'ar.admin_code')
+            // 获取用户所有角色的 permission_codes
+            $allCodes = [];
+            $roles = Db::table('sys_admin_role as ar')
                 ->join('sys_role as r', 'ar.role_code', '=', 'r.role_code')
-                ->where('a.id', $userId)
+                ->where('ar.admin_code', $user['admin_code'])
                 ->where('r.status', 1)
-                ->whereJsonContains('r.permission_codes', $permCode)
-                ->exists();
+                ->get(['r.permission_codes']);
+
+            foreach ($roles as $role) {
+                $codes = $role->permission_codes ?? [];
+                $allCodes = array_merge($allCodes, is_array($codes) ? $codes : []);
+            }
+            $allCodes = array_unique($allCodes);
+
+            $hasPermission = in_array($permCode, $allCodes);
 
             $this->cache->set($userPermCacheKey, $hasPermission, 300);
         }
