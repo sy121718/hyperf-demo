@@ -11,6 +11,7 @@ declare(strict_types=1);
  */
 use Hyperf\Contract\ApplicationInterface;
 use Hyperf\Di\ClassLoader;
+use Hyperf\Di\ScanHandler\ProcScanHandler;
 use Hyperf\Engine\DefaultOption;
 
 ini_set('display_errors', 'on');
@@ -25,7 +26,7 @@ require BASE_PATH . '/vendor/autoload.php';
 
 ! defined('SWOOLE_HOOK_FLAGS') && define('SWOOLE_HOOK_FLAGS', DefaultOption::hookFlags());
 
-ClassLoader::init();
+ClassLoader::init(handler: new ProcScanHandler());
 
 $container = require BASE_PATH . '/config/container.php';
 

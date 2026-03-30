@@ -27,4 +27,14 @@ abstract class AbstractController
 
     #[Inject]
     protected ResponseInterface $response;
+
+    protected function success(mixed $data = null, string $message = '操作成功'): array
+    {
+        return [
+            'success' => true,
+            'code' => 200,
+            'message' => $message,
+            'data' => $data,
+        ];
+    }
 }

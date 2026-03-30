@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -proot base -e \"SHOW PROCESSLIST;\")",
+      "Bash(php bin/hyperf.php start)",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -proot base -e \"DESCRIBE sys_role;\")",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -proot base -e \"DESCRIBE sys_config;\")",
+      "Bash(mysql -h 127.0.0.1 -P 3306 -u root -proot base -e \":*)"
+    ]
+  }
+}
