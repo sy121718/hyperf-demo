@@ -1,19 +1,30 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Model\Role;
 
 use App\Common\Model\BaseModel;
+use App\Model\Admin\SysAdminModel;
 use Hyperf\Database\Model\SoftDeletes;
 
 class SysRoleModel extends BaseModel
 {
     use SoftDeletes;
 
-    protected ?string $table = 'sys_role';
-    protected ?string $dateFormat = 'Y-m-d H:i:s.v';
     protected const DELETED_AT = 'deleted_time';
+
+    protected ?string $table = 'sys_role';
+
+    protected ?string $dateFormat = 'Y-m-d H:i:s.v';
 
     protected array $fillable = [
         'role_name', 'role_code', 'role_type', 'sort_order',
@@ -44,7 +55,7 @@ class SysRoleModel extends BaseModel
     public function admins()
     {
         return $this->belongsToMany(
-            \App\Model\Admin\SysAdminModel::class,
+            SysAdminModel::class,
             'sys_admin_role',
             'role_code',
             'admin_code'

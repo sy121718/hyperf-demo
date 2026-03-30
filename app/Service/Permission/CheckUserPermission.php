@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Service\Permission;
 
@@ -14,13 +22,14 @@ class CheckUserPermission
         protected SysPermissionDictModel $permissionModel,
         protected SysAdminRoleModel $adminRoleModel,
         protected SysRoleModel $roleModel,
-    ) {}
+    ) {
+    }
 
     public function handle(int $userId, string $apiPath, string $httpMethod): bool
     {
         $permission = $this->findPermission($apiPath, $httpMethod);
 
-        if (!$permission) {
+        if (! $permission) {
             return true;
         }
 

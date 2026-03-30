@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * This file is part of Hyperf.
+ *
+ * @link     https://www.hyperf.io
+ * @document https://hyperf.wiki
+ * @contact  group@hyperf.io
+ * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
+ */
 
 namespace App\Service\Role;
 
@@ -13,16 +21,17 @@ class AssignPermissions
     public function __construct(
         protected SysRoleModel $roleModel,
         protected SysPermissionDictModel $permissionModel,
-    ) {}
+    ) {
+    }
 
     public function handle(string $roleCode, array $permissionCodes): array
     {
-        !empty($roleCode) || paramError('角色标识不能为空');
+        ! empty($roleCode) || paramError('角色标识不能为空');
 
         $role = $this->roleModel->where('role_code', $roleCode)->first();
-        !$role && paramError('角色不存在', 404);
+        ! $role && paramError('角色不存在', 404);
 
-        if (!empty($permissionCodes)) {
+        if (! empty($permissionCodes)) {
             $exists = $this->permissionModel
                 ->whereIn('perm_code', $permissionCodes)
                 ->count();
