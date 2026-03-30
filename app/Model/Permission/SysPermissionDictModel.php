@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace App\Model\Permission;
 
 use App\Common\Model\BaseModel;
-use App\Model\Menu\SysMenuModel;
 
 class SysPermissionDictModel extends BaseModel
 {
@@ -61,15 +60,5 @@ class SysPermissionDictModel extends BaseModel
     public function parent()
     {
         return $this->belongsTo(self::class, 'parent_id');
-    }
-
-    public function menus()
-    {
-        return $this->belongsToMany(
-            SysMenuModel::class,
-            'sys_menu_permission',
-            'permission_id',
-            'menu_id'
-        );
     }
 }

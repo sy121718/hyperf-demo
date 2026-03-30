@@ -48,7 +48,6 @@ class BatchDelete
                 $permIds = $this->getPermissionAndChildrenIds($id);
                 $allDeletedIds = array_merge($allDeletedIds, $permIds);
 
-                Db::table('sys_menu_permission')->whereIn('permission_id', $permIds)->delete();
                 $deletedCount += $this->permissionModel->whereIn('id', $permIds)->delete();
             }
 

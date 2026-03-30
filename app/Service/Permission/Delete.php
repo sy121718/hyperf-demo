@@ -36,7 +36,6 @@ class Delete
         try {
             $allIds = $this->getPermissionAndChildrenIds($id);
 
-            Db::table('sys_menu_permission')->whereIn('permission_id', $allIds)->delete();
             $this->permissionModel->whereIn('id', $allIds)->delete();
 
             Db::commit();

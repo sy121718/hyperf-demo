@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace App\Model\Menu;
 
 use App\Common\Model\BaseModel;
-use App\Model\Role\SysRoleModel;
 use Hyperf\Database\Model\SoftDeletes;
 
 class SysMenuModel extends BaseModel
@@ -65,15 +64,5 @@ class SysMenuModel extends BaseModel
     public function parent()
     {
         return $this->belongsTo(self::class, 'parent_id');
-    }
-
-    public function roles()
-    {
-        return $this->belongsToMany(
-            SysRoleModel::class,
-            'sys_role_menu',
-            'menu_id',
-            'role_id'
-        );
     }
 }
