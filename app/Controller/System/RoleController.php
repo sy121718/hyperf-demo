@@ -70,12 +70,12 @@ class RoleController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function assignPermissions(): array
+    public function assignMenus(): array
     {
         $data = $this->request->all();
         $roleCode = $data['role_code'] ?? '';
-        $permissionCodes = $data['permission_codes'] ?? [];
-        $result = container()->get(RoleAction\AssignPermissions::class)->handle($roleCode, $permissionCodes);
+        $menuIds = $data['menu_ids'] ?? [];
+        $result = container()->get(RoleAction\AssignMenus::class)->handle($roleCode, $menuIds);
         return $this->success($result, '分配成功');
     }
 
