@@ -22,7 +22,7 @@ use Psr\SimpleCache\CacheInterface;
  * 用法：
  *   读缓存时用常量做 key
  *   写操作后调用 CacheKeys::flush(CacheKeys::ROLE_OPTIONS, CacheKeys::ROLE_ALL)
- *   前缀清除（带 * 的动态 key）：CacheKeys::flush(CacheKeys::PERM_USER)  ← 末尾带冒号自动走 SCAN
+ *   前缀清除（带 * 的动态 key）：CacheKeys::flush(CacheKeys::PERM_CODES)  ← 末尾带冒号自动走 SCAN
  */
 final class CacheKeys
 {
@@ -48,7 +48,7 @@ final class CacheKeys
 
     public const PERM_API = 'perm:api:';
 
-    public const PERM_USER = 'perm:user:';
+    public const PERM_CODES = 'perm:codes:';  // 用户的所有权限码集合
 
     public const MENU_USER = 'biz:menu:user:';
 
@@ -78,9 +78,9 @@ final class CacheKeys
         return self::PERM_API . "{$method}:" . md5($path);
     }
 
-    public static function permUser(int $userId, int $permId): string
+    public static function permCodes(string $adminCode): string
     {
-        return self::PERM_USER . "{$userId}:{$permId}";
+        return self::PERM_CODES . $adminCode;
     }
 
     public static function menuUser(int $userId): string

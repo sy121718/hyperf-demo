@@ -59,7 +59,7 @@ class AssignRoles
             ]);
         }
 
-        CacheKeys::flush(CacheKeys::PERM_USER . "{$admin->id}:", CacheKeys::menuUser($admin->id));
+        CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
 
         return ['admin_code' => $adminCode, 'role_codes' => $roleCodes];
     }

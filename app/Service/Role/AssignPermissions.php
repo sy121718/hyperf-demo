@@ -43,7 +43,7 @@ class AssignPermissions
         CacheKeys::flush(
             CacheKeys::ROLE_OPTIONS,
             CacheKeys::ROLE_ALL,
-            CacheKeys::PERM_USER,
+            CacheKeys::PERM_CODES,
             CacheKeys::MENU_USER,
             CacheKeys::MENU_SUPER
         );

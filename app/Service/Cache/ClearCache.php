@@ -28,7 +28,7 @@ class ClearCache
         'config' => ['label' => '系统配置', 'keys' => [CacheKeys::CONFIG]],
         'ip' => ['label' => 'IP黑名单', 'keys' => [CacheKeys::IP_BLACKLIST]],
         'auth' => ['label' => '登录会话', 'keys' => [CacheKeys::AUTH_SESSION]],
-        'user_perm' => ['label' => '用户权限', 'keys' => [CacheKeys::PERM_USER, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER]],
+        'user_perm' => ['label' => '用户权限', 'keys' => [CacheKeys::PERM_CODES, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER]],
     ];
 
     public function handle(array $modules = []): array

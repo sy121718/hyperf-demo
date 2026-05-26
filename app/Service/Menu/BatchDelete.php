@@ -49,7 +49,7 @@ class BatchDelete
             }
 
             Db::commit();
-            CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER, CacheKeys::PERM_USER);
+            CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER, CacheKeys::PERM_CODES);
             return $deletedCount;
         } catch (Throwable $e) {
             Db::rollBack();

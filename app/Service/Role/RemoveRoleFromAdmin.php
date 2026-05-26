@@ -40,7 +40,7 @@ class RemoveRoleFromAdmin
 
         $admin->roles()->detach($roleId);
 
-        CacheKeys::flush(CacheKeys::PERM_USER . "{$adminId}:", CacheKeys::menuUser($adminId));
+        CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
 
         return ['admin_id' => $adminId, 'role_id' => $roleId];
     }

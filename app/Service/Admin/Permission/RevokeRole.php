@@ -51,7 +51,7 @@ class RevokeRole
         try {
             $admin->roles()->sync($remainingRoleIds);
             Db::commit();
-            CacheKeys::flush(CacheKeys::PERM_USER . "{$adminId}:", CacheKeys::menuUser($adminId));
+            CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
         } catch (Throwable $e) {
             Db::rollBack();
             throw $e;

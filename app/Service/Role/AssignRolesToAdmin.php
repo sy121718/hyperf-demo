@@ -48,7 +48,7 @@ class AssignRolesToAdmin
         try {
             $admin->roles()->sync($roleIds);
             Db::commit();
-            CacheKeys::flush(CacheKeys::PERM_USER . "{$adminId}:", CacheKeys::menuUser($adminId));
+            CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
         } catch (Throwable $e) {
             Db::rollBack();
             throw $e;

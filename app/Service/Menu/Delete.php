@@ -39,7 +39,7 @@ class Delete
             $this->menuModel->whereIn('id', $childIds)->delete();
 
             Db::commit();
-            CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER, CacheKeys::PERM_USER);
+            CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER, CacheKeys::PERM_CODES);
             return true;
         } catch (Throwable $e) {
             Db::rollBack();

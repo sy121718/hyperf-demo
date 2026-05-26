@@ -41,7 +41,7 @@ class Update
 
         $permission->update($updateData);
 
-        CacheKeys::flush(CacheKeys::PERM_OPTIONS, CacheKeys::PERM_TREE, CacheKeys::PERM_API, CacheKeys::PERM_USER, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER);
+        CacheKeys::flush(CacheKeys::PERM_OPTIONS, CacheKeys::PERM_TREE, CacheKeys::PERM_API, CacheKeys::PERM_CODES, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER);
 
         return $permission->fresh()->toArray();
     }
