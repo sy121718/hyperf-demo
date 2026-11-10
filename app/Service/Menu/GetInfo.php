@@ -25,9 +25,7 @@ class GetInfo
     {
         $id > 0 || paramError('菜单ID不能为空');
 
-        $menu = $this->menuModel
-            ->with(['permissions'])
-            ->find($id);
+        $menu = $this->menuModel->find($id);
 
         ! $menu && paramError('菜单不存在', 404);
 

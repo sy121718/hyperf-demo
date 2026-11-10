@@ -27,7 +27,7 @@ class GetList
 
         // 列表页只查必要字段
         $fields = $withDetail ? ['*'] : [
-            'id', 'admin_id', 'ip', 'location', 'isp', 'user_agent',
+            'id', 'admin_id', 'login_ip', 'location', 'isp', 'user_agent',
             'last_active_time', 'login_time', 'create_time',
         ];
 
@@ -41,6 +41,6 @@ class GetList
             $query->with(['admin:id,username,name']);
         }
 
-        return $query->paginate($data['limit'] ?? 10, $fields, 'page', $data['page'] ?? 1);
+        return $query->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
     }
 }

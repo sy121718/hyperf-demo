@@ -51,6 +51,6 @@ class GetList
             $query->with(['admin:id,username,name', 'menu:id,menu_name', 'creator:id,username']);
         }
 
-        return $query->paginate($data['limit'] ?? 10, $fields, 'page', $data['page'] ?? 1);
+        return $query->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
     }
 }

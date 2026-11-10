@@ -39,6 +39,6 @@ class GetList
                 "%{$search}%"
             ))
             ->sort($data)
-            ->paginate($data['limit'] ?? 10, $fields, 'page', $data['page'] ?? 1);
+            ->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
     }
 }

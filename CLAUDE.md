@@ -3,7 +3,7 @@
 ## 项目概述
 
 **技术栈**: Hyperf 3.1 + PHP 8.3 + Swoole 6.1 + MySQL + JWT + Vue
-**数据库**: `base`
+**数据库**: `hyper`
 
 ## 核心规范
 
@@ -251,14 +251,14 @@ app/
 DB_DRIVER=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=base
+DB_DATABASE=hyper
 DB_USERNAME=root
 DB_PASSWORD=root
 ```
 
 **数据库操作示例**：
 ```bash
-mysql -h 127.0.0.1 -P 3306 -u root -proot base
+mysql -h 127.0.0.1 -P 3306 -u root -proot hyper
 
 # 查看表结构
 DESCRIBE sys_admin;

@@ -63,6 +63,8 @@ class SysAdminModel extends BaseModel
             SysRoleModel::class,
             'sys_admin_role',
             'admin_code',
+            'role_code',
+            'admin_code',
             'role_code'
         );
     }

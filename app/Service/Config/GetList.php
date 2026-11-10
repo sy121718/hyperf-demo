@@ -35,6 +35,6 @@ class GetList
             ->filter($data)
             ->when($search, fn ($q) => $q->whereAny($this->configModel->getSearchableFields(), 'like', "%{$search}%"))
             ->sort($data)
-            ->paginate($data['limit'] ?? 10, $fields, 'page', $data['page'] ?? 1);
+            ->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
     }
 }

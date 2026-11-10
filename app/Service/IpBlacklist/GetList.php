@@ -43,6 +43,6 @@ class GetList
             $query->with(['operator:id,username']);
         }
 
-        return $query->paginate($data['limit'] ?? 20, $fields, 'page', $data['page'] ?? 1);
+        return $query->paginate((int) ($data['limit'] ?? 20), $fields, 'page', (int) ($data['page'] ?? 1));
     }
 }

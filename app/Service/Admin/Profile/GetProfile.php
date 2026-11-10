@@ -26,7 +26,7 @@ class GetProfile
         $userId = (int) currentUser('id');
         $userId > 0 || paramError('用户未登录', 401);
 
-        $admin = $this->adminModel->with(['roles:id,role_name,role_code'])->find($userId);
+        $admin = $this->adminModel->with(['roles:sys_role.id,sys_role.role_name,sys_role.role_code'])->find($userId);
         ! $admin && paramError('用户不存在', 404);
 
         $data = $admin->toArray();

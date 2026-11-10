@@ -83,6 +83,7 @@ class JwtAuthMiddleware implements MiddlewareInterface
                 $this->cache->set($cacheKey, [
                     'admin' => [
                         'id' => $admin->id,
+                        'admin_code' => $admin->admin_code,
                         'username' => $admin->username,
                         'name' => $admin->name ?? $admin->username,
                         'email' => $admin->email,
@@ -101,6 +102,7 @@ class JwtAuthMiddleware implements MiddlewareInterface
 
             $adminArr = $cached ? $cached['admin'] : [
                 'id' => $admin->id,
+                'admin_code' => $admin->admin_code,
                 'username' => $admin->username,
                 'name' => $admin->name ?? $admin->username,
                 'email' => $admin->email,

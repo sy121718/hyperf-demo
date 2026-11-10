@@ -79,6 +79,10 @@ class GetMenu
 
         $allCodes = [];
         foreach ($rolePermissionArrays as $codes) {
+            // pluck 不走模型 casts，JSON 字段返回字符串，需手动解码
+            if (is_string($codes)) {
+                $codes = json_decode($codes, true) ?: [];
+            }
             if (is_array($codes)) {
                 $allCodes = array_merge($allCodes, $codes);
             }

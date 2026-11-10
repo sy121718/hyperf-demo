@@ -37,7 +37,6 @@ class GetTree
         }
 
         $menus = $this->menuModel
-            ->with(['permissions'])
             ->filter($data)
             ->when($search, fn ($q) => $q->whereAny(
                 $this->menuModel->getSearchableFields(),

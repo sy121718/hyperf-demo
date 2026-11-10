@@ -23,7 +23,7 @@ class CacheController extends AbstractController
      */
     public function modules(): array
     {
-        $modules = app(ClearCache::class)->getModules();
+        $modules = container()->get(ClearCache::class)->getModules();
         return $this->success($modules);
     }
 
@@ -46,7 +46,7 @@ class CacheController extends AbstractController
             paramError('modules 参数必须是数组');
         }
 
-        $result = app(ClearCache::class)->handle($modules);
+        $result = container()->get(ClearCache::class)->handle($modules);
 
         $msg = $result['is_full_clear'] ? '全部缓存已清除' : '选中模块缓存已清除';
 
