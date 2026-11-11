@@ -12,14 +12,15 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Attachment;
 
+use App\Dto\Attachment\AttachmentRequest;
 use App\Exception\BusinessException;
 use App\Model\Attachment\SysAttachmentModel;
 use App\Service\Attachment\Delete;
-use App\Service\Attachment\Dto\UploadAttachmentDto;
 use App\Service\Attachment\GetList;
 use App\Service\Attachment\Upload;
 use Mockery;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * @internal
@@ -34,40 +35,48 @@ class AttachmentTest extends TestCase
 
     public function testUploadSuccess(): void
     {
-        $dto = new UploadAttachmentDto(
-            fileName: 'test.jpg',
-            filePath: '/uploads/test.jpg',
-            fileSize: 1024,
-            fileType: 'image',
-            mimeType: 'image/jpeg',
-        );
+        $request = AttachmentRequest::fromArray([
+            'file_name' => 'test.jpg',
+            'file_path' => '/uploads/test.jpg',
+            'file_size' => 1024,
+            'file_type' => 'image',
+            'mime_type' => 'image/jpeg',
+        ]);
 
-        $created = Mockery::mock(SysAttachmentModel::class)->makePartial();
+        $created = Mockery::mock(stdClass::class);
         $created->id = 1;
+        $created->shouldReceive('toArray')->andReturn(['id' => 1, 'file_name' => 'test.jpg']);
 
         $model = Mockery::mock(SysAttachmentModel::class);
         $model->shouldReceive('create')->once()->andReturn($created);
 
-        $action = new Upload($model);
-        $result = $action->handle($dto);
+        $result = (new Upload($model))->handle($request);
 
-        $this->assertEquals(['id' => 1], $result);
+        $this->assertSame(1, $result['id']);
     }
 
-    public function testUploadEmptyFileName(): void
+    public function testUploadDefaultsStorageTypeAndStatus(): void
     {
-        $dto = new UploadAttachmentDto(
-            fileName: '',
-            filePath: '/uploads/test.jpg',
-            fileSize: 1024,
-            fileType: 'image',
-        );
+        $captured = null;
+        $created = Mockery::mock(stdClass::class);
+        $created->id = 1;
+        $created->shouldReceive('toArray')->andReturn(['id' => 1]);
 
         $model = Mockery::mock(SysAttachmentModel::class);
-        $action = new Upload($model);
+        $model->shouldReceive('create')->once()->withArgs(function (array $data) use (&$captured) {
+            $captured = $data;
+            return true;
+        })->andReturn($created);
 
-        $this->expectException(BusinessException::class);
-        $action->handle($dto);
+        (new Upload($model))->handle(AttachmentRequest::fromArray([
+            'file_name' => 'a.txt',
+            'file_path' => '/tmp/a.txt',
+            'file_size' => 3,
+            'file_type' => 'txt',
+        ]));
+
+        $this->assertSame('local', $captured['storage_type']);
+        $this->assertSame(1, $captured['status']);
     }
 
     public function testDeleteSuccess(): void
@@ -78,10 +87,7 @@ class AttachmentTest extends TestCase
         $model = Mockery::mock(SysAttachmentModel::class);
         $model->shouldReceive('find')->with(1)->andReturn($attachment);
 
-        $action = new Delete($model);
-        $result = $action->handle(1);
-
-        $this->assertTrue($result);
+        $this->assertTrue((new Delete($model))->handle(1));
     }
 
     public function testDeleteNotFound(): void
@@ -89,10 +95,8 @@ class AttachmentTest extends TestCase
         $model = Mockery::mock(SysAttachmentModel::class);
         $model->shouldReceive('find')->with(999)->andReturn(null);
 
-        $action = new Delete($model);
-
         $this->expectException(BusinessException::class);
-        $action->handle(999);
+        (new Delete($model))->handle(999);
     }
 
     public function testGetListClassExists(): void

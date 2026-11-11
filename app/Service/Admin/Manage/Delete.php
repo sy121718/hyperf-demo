@@ -38,7 +38,8 @@ class Delete
 
         Db::beginTransaction();
         try {
-            $this->adminRoleModel->where('admin_id', $id)->delete();
+            // sys_admin_role 的关联键是 admin_code
+            $this->adminRoleModel->where('admin_code', $admin->admin_code)->delete();
             $this->sessionsModel->where('admin_id', $id)->delete();
             $admin->delete();
 

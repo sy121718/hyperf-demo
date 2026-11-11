@@ -13,34 +13,30 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\Attachment\AttachmentRequest;
+use App\Dto\Attachment\AttachmentResponse;
 use App\Service\Attachment as AttachmentAction;
-use App\Service\Attachment\Dto\UpdateAttachmentDto;
-use App\Service\Attachment\Dto\UploadAttachmentDto;
 
 class AttachmentController extends AbstractController
 {
-    public function list(): array
+    public function list(AttachmentRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(AttachmentAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(AttachmentAction\GetList::class)->handle($request->toQueryArray());
+        return $this->success(AttachmentResponse::page($result), '获取成功');
     }
 
-    public function upload(): array
+    public function upload(AttachmentRequest $request): array
     {
-        $data = $this->request->all();
-        $dto = UploadAttachmentDto::fromArray($data);
-        $result = container()->get(AttachmentAction\Upload::class)->handle($dto);
-        return $this->success($result, '上传成功');
+        $result = container()->get(AttachmentAction\Upload::class)->handle($request);
+        return $this->success(AttachmentResponse::saved($result), '上传成功');
     }
 
-    public function update(): array
+    public function update(AttachmentRequest $request): array
     {
-        $data = $this->request->all();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $dto = UpdateAttachmentDto::fromArray($data);
-        $result = container()->get(AttachmentAction\Update::class)->handle($dto);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(AttachmentAction\Update::class)->handle($request);
+        return $this->success(AttachmentResponse::saved($result), '更新成功');
     }
 
     public function delete(): array

@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Role;
 
+use App\Dto\Role\RoleRequest;
 use App\Model\Role\SysRoleModel;
-use App\Service\Role\Dto\UpdateRoleDto;
 
 class Update
 {
@@ -22,25 +22,25 @@ class Update
     ) {
     }
 
-    public function handle(UpdateRoleDto $dto): array
+    public function handle(RoleRequest $request): array
     {
-        $role = $this->roleModel->find($dto->id);
+        $id = (int) $request->id;
+        $role = $this->roleModel->find($id);
         ! $role && paramError('角色不存在', 404);
 
-        if ($dto->roleCode && $dto->roleCode !== $role->role_code) {
-            ! $this->roleModel->isFieldUnique(['role_code' => $dto->roleCode], $dto->id)
-                && paramError("角色标识 {$dto->roleCode} 已存在");
+        if ($request->role_code && $request->role_code !== $role->role_code) {
+            ! $this->roleModel->isFieldUnique(['role_code' => $request->role_code], $id)
+                && paramError("角色标识 {$request->role_code} 已存在");
         }
 
-        $updateData = $dto->toDbArrayFiltered();
-        unset($updateData['id']);
+        $updateData = $request->toDbArrayFiltered();
 
         if (isset($updateData['permission_codes'])) {
-            $updateData['permission_codes'] = json_encode($updateData['permission_codes'] ?: []);
+            $updateData['permission_codes'] = $updateData['permission_codes'] ?: [];
         }
 
         $role->update($updateData);
 
-        return UpdateRoleDto::dbToFront($role->fresh()->toArray());
+        return $role->fresh()->toArray();
     }
 }

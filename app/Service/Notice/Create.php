@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notice\NoticeModel;
-use App\Service\Notice\Dto\CreateNoticeDto;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -24,30 +24,28 @@ class Create
     ) {
     }
 
-    public function handle(CreateNoticeDto $dto): int
+    public function handle(NoticeRequest $request): int
     {
         Db::beginTransaction();
         try {
-            $dbData = $dto->toDbArray();
-
-            if (! empty($dbData['expire_time'])) {
-                $dbData['expire_time'] = $this->convertExpireTime($dbData['expire_time']);
-            }
-
-            $dbData['create_by'] = $dbData['create_by'] ?? (int) currentUser('id');
+            $dbData = $request->toDbArrayFiltered();
+            $dbData['expire_time'] = $this->convertExpireTime($request->expire_time);
 
             $notice = $this->noticeModel->create($dbData);
             ! $notice && paramError('创建通知失败');
 
             Db::commit();
-            return $notice->id;
+            return (int) $notice->id;
         } catch (Throwable $e) {
             Db::rollBack();
             throw $e;
         }
     }
 
-    private function convertExpireTime(?string $expireTime): ?string
+    /**
+     * 兼容时间戳与日期字符串，统一存成 Y-m-d H:i:s.
+     */
+    private function convertExpireTime(mixed $expireTime): ?string
     {
         if ($expireTime === null || $expireTime === '') {
             return null;
@@ -58,6 +56,6 @@ class Create
             return date('Y-m-d H:i:s', (int) $seconds);
         }
 
-        return $expireTime;
+        return (string) $expireTime;
     }
 }

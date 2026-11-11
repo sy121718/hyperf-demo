@@ -15,6 +15,8 @@ namespace App\Model\IpBlacklist;
 use App\Common\Model\BaseModel;
 use App\Model\Admin\SysAdminModel;
 
+use function Hyperf\Support\now;
+
 class IpBlacklistModel extends BaseModel
 {
     public const STATUS_EXPIRED = 0;

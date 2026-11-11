@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
+use App\Dto\Permission\PermissionRequest;
 use App\Model\Permission\SysPermissionDictModel;
-use App\Service\Permission\Dto\PermissionItemDto;
 
 class Create
 {
@@ -23,17 +23,14 @@ class Create
     ) {
     }
 
-    public function handle(PermissionItemDto $dto): array
+    public function handle(PermissionRequest $request): array
     {
-        empty($dto->permCode) && paramError('权限编码不能为空');
-        empty($dto->permName) && paramError('权限名称不能为空');
+        $permCode = (string) $request->perm_code;
+        ! $this->permissionModel->isFieldUnique(['perm_code' => $permCode])
+            && paramError("权限编码 {$permCode} 已存在");
 
-        ! $this->permissionModel->isFieldUnique(['perm_code' => $dto->permCode])
-            && paramError("权限编码 {$dto->permCode} 已存在");
-
-        $dbData = $dto->toDbArray();
-        unset($dbData['id']);
-        $dbData['create_by'] = (int) currentUser('id');
+        $dbData = $request->toDbArrayFiltered();
+        $dbData['parent_id'] = $dbData['parent_id'] ?? 0;
 
         $permission = $this->permissionModel->create($dbData);
 

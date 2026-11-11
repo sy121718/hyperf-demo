@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\CronJob;
 
+use App\Dto\CronJob\CronJobRequest;
 use App\Model\CronJob\SysCronJobModel;
-use App\Service\CronJob\Dto\UpdateCronJobDto;
 
 class Update
 {
@@ -22,15 +22,13 @@ class Update
     ) {
     }
 
-    public function handle(UpdateCronJobDto $dto): array
+    public function handle(CronJobRequest $request): array
     {
-        $job = $this->cronJobModel->find($dto->id);
-        ! $job && paramError('任务不存在');
+        $id = (int) $request->id;
+        $job = $this->cronJobModel->find($id);
+        ! $job && paramError('任务不存在', 404);
 
-        $updateData = $dto->toDbArrayFiltered();
-        unset($updateData['id']);
-
-        $job->update($updateData);
+        $job->update($request->toDbArrayFiltered());
 
         return $job->fresh()->toArray();
     }

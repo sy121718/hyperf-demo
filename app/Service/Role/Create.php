@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Role;
 
+use App\Dto\Role\RoleRequest;
 use App\Model\Role\SysRoleModel;
-use App\Service\Role\Dto\CreateRoleDto;
 
 class Create
 {
@@ -22,18 +22,21 @@ class Create
     ) {
     }
 
-    public function handle(CreateRoleDto $dto): array
+    public function handle(RoleRequest $request): array
     {
-        ! $this->roleModel->isFieldUnique(['role_code' => $dto->roleCode])
-            && paramError("角色标识 {$dto->roleCode} 已存在");
+        $roleCode = (string) $request->role_code;
 
-        $dbData = $dto->toDbArray();
-        unset($dbData['id'], $dbData['permission_codes']);
+        ! $this->roleModel->isFieldUnique(['role_code' => $roleCode])
+            && paramError("角色标识 {$roleCode} 已存在");
+
+        // 过滤 null：未提交的字段交给数据库默认值，避免显式写入 NULL 覆盖默认值
+        $dbData = $request->toDbArrayFiltered();
         $dbData['create_by'] = (int) currentUser('id');
-        $dbData['permission_codes'] = json_encode($dto->permissionCodes ?: []);
+        // 模型已配 'array' cast，直接传数组，避免双重编码
+        $dbData['permission_codes'] = $request->permission_codes ?: [];
 
         $role = $this->roleModel->create($dbData);
 
-        return CreateRoleDto::dbToFront($role->toArray());
+        return $role->toArray();
     }
 }

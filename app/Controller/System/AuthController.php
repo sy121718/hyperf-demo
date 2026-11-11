@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
-use App\Request\System\LoginRequest;
+use App\Dto\Auth\LoginRequest;
 use App\Service\Admin\Auth as AuthAction;
 use App\Service\Admin\Profile as ProfileAction;
 

@@ -12,15 +12,16 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Exception\BusinessException;
 use App\Model\Notice\NoticeModel;
 use App\Model\Notice\NoticeReadModel;
 use App\Model\Notice\NoticeTargetModel;
 use App\Service\Notice\BatchPushToUsers;
-use App\Service\Notice\Dto\UpdateNoticeDto;
 use App\Service\Notice\GetUnreadCount;
 use App\Service\Notice\MarkRead;
 use App\Service\Notice\SetTargets;
+use App\Service\Notice\Update;
 use Hyperf\Context\Context;
 use Mockery;
 use PHPUnit\Framework\TestCase;
@@ -37,43 +38,96 @@ class NoticeTest extends TestCase
         Context::destroy('currentUser');
     }
 
-    public function testUpdateNoticeDtoFromArray(): void
-    {
-        $dto = UpdateNoticeDto::fromArray(['id' => 1, 'title' => '测试', 'is_top' => 1]);
+    // ==================== Request DTO ====================
 
-        $this->assertEquals(1, $dto->id);
-        $this->assertEquals('测试', $dto->title);
-        $this->assertEquals(1, $dto->isTop);
-        $this->assertNull($dto->content);
+    public function testRequestFromArrayFillsTypedFields(): void
+    {
+        $request = NoticeRequest::fromArray(['id' => 1, 'title' => '测试', 'is_top' => 1]);
+
+        $this->assertSame(1, $request->id);
+        $this->assertSame('测试', $request->title);
+        $this->assertSame(1, $request->is_top);
+        $this->assertNull($request->content);
     }
 
-    public function testUpdateNoticeDtoToUpdateArray(): void
+    public function testRequestToDbArrayDropsVirtualFields(): void
     {
-        $dto = UpdateNoticeDto::fromArray(['id' => 1, 'title' => '标题', 'notice_type' => 2]);
-        $result = $dto->toUpdateArray();
-
-        $this->assertEquals('标题', $result['title']);
-        $this->assertEquals(2, $result['notice_type']);
-        $this->assertArrayNotHasKey('content', $result);
-    }
-
-    public function testUpdateNoticeDtoPublishedFields(): void
-    {
-        $dto = UpdateNoticeDto::fromArray([
+        $request = NoticeRequest::fromArray([
             'id' => 1,
             'title' => '标题',
-            'is_top' => 1,
-            'is_popup' => 1,
-            'expire_time' => '2026-12-31 23:59:59',
+            'notice_type' => 2,
+            'notice_id' => 7,
+            'user_id' => 3,
         ]);
 
-        $result = $dto->getPublishedUpdateFields();
+        $data = $request->toDbArrayFiltered();
 
-        $this->assertArrayHasKey('is_top', $result);
-        $this->assertArrayHasKey('is_popup', $result);
-        $this->assertArrayHasKey('expire_time', $result);
-        $this->assertArrayNotHasKey('title', $result);
+        $this->assertSame('标题', $data['title']);
+        $this->assertSame(2, $data['notice_type']);
+        $this->assertArrayNotHasKey('id', $data);
+        $this->assertArrayNotHasKey('notice_id', $data);
+        $this->assertArrayNotHasKey('user_id', $data);
     }
+
+    // ==================== Update ====================
+
+    public function testUpdateDraftAllowsAllFields(): void
+    {
+        $captured = null;
+
+        $notice = Mockery::mock(NoticeModel::class);
+        $notice->shouldReceive('getAttribute')->andReturnUsing(fn ($k) => $k === 'status' ? 0 : null);
+        $notice->shouldReceive('update')->once()->withArgs(function (array $data) use (&$captured) {
+            $captured = $data;
+            return true;
+        })->andReturn(true);
+
+        $model = Mockery::mock(NoticeModel::class);
+        $model->shouldReceive('find')->with(1)->andReturn($notice);
+
+        (new Update($model))->handle(
+            NoticeRequest::fromArray(['id' => 1, 'title' => '新标题', 'is_top' => 1])
+        );
+
+        $this->assertSame('新标题', $captured['title']);
+        $this->assertSame(1, $captured['is_top']);
+    }
+
+    public function testUpdatePublishedNoticeOnlyAllowsPresentationFields(): void
+    {
+        $captured = null;
+
+        $notice = Mockery::mock(NoticeModel::class);
+        $notice->shouldReceive('getAttribute')->andReturnUsing(fn ($k) => $k === 'status' ? 1 : null);
+        $notice->shouldReceive('update')->once()->withArgs(function (array $data) use (&$captured) {
+            $captured = $data;
+            return true;
+        })->andReturn(true);
+
+        $model = Mockery::mock(NoticeModel::class);
+        $model->shouldReceive('find')->with(1)->andReturn($notice);
+
+        (new Update($model))->handle(
+            NoticeRequest::fromArray(['id' => 1, 'title' => '想改标题', 'is_popup' => 1])
+        );
+
+        // 已发布公告不允许改标题，只保留置顶/弹窗/过期时间
+        $this->assertArrayNotHasKey('title', $captured);
+        $this->assertSame(1, $captured['is_popup']);
+    }
+
+    public function testUpdateNotFound(): void
+    {
+        $model = Mockery::mock(NoticeModel::class);
+        $model->shouldReceive('find')->with(999)->andReturn(null);
+
+        $this->expectException(BusinessException::class);
+        $this->expectExceptionCode(404);
+
+        (new Update($model))->handle(NoticeRequest::fromArray(['id' => 999, 'title' => 'x']));
+    }
+
+    // ==================== MarkRead ====================
 
     public function testMarkReadFirstTime(): void
     {
@@ -110,6 +164,8 @@ class NoticeTest extends TestCase
         $action->handle(['notice_id' => 1, 'user_id' => 0]);
     }
 
+    // ==================== GetUnreadCount ====================
+
     public function testGetUnreadCount(): void
     {
         $noticeModel = Mockery::mock(NoticeModel::class);
@@ -144,6 +200,8 @@ class NoticeTest extends TestCase
         $action = new GetUnreadCount($noticeModel, $readModel);
         $this->assertEquals(0, $action->handle(1));
     }
+
+    // ==================== SetTargets ====================
 
     public function testSetTargetsNoticeNotFound(): void
     {
@@ -193,6 +251,8 @@ class NoticeTest extends TestCase
             'target_ids' => [1, 2],
         ]));
     }
+
+    // ==================== BatchPushToUsers ====================
 
     public function testBatchPushEmptyNoticeId(): void
     {

@@ -38,7 +38,8 @@ class AssignPermissions
             $exists === count($permissionCodes) || paramError('部分权限不存在');
         }
 
-        $role->update(['permission_codes' => json_encode($permissionCodes ?: [])]);
+        // 模型已配 'array' cast，无需手动 json_encode
+        $role->update(['permission_codes' => $permissionCodes ?: []]);
 
         CacheKeys::flush(
             CacheKeys::ROLE_OPTIONS,

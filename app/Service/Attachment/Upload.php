@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Attachment;
 
+use App\Dto\Attachment\AttachmentRequest;
 use App\Model\Attachment\SysAttachmentModel;
-use App\Service\Attachment\Dto\UploadAttachmentDto;
 
 class Upload
 {
@@ -22,17 +22,14 @@ class Upload
     ) {
     }
 
-    public function handle(UploadAttachmentDto $data): array
+    public function handle(AttachmentRequest $request): array
     {
-        empty($data->fileName) && paramError('文件名不能为空');
-        empty($data->filePath) && paramError('文件路径不能为空');
-        empty($data->fileType) && paramError('文件类型不能为空');
-
-        $dbData = $data->toDbArray();
+        $dbData = $request->toDbArrayFiltered();
+        $dbData['storage_type'] = $dbData['storage_type'] ?? 'local';
         $dbData['status'] = 1;
 
         $attachment = $this->attachmentModel->create($dbData);
 
-        return ['id' => $attachment->id];
+        return $attachment->toArray();
     }
 }

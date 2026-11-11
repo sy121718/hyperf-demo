@@ -25,9 +25,7 @@ class GetInfo
     {
         $id > 0 || paramError('角色ID不能为空');
 
-        $role = $this->roleModel
-            ->with(['menus'])
-            ->find($id);
+        $role = $this->roleModel->find($id);
 
         ! $role && paramError('角色不存在', 404);
 

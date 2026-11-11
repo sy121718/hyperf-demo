@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
-use App\Service\Admin\Manage\Dto\UpdateAdminDto;
 use App\Service\Admin\Manage\Update;
 use App\Service\Role\AssignRoles;
 use Hyperf\Context\Context;
@@ -124,7 +124,7 @@ class UpdateTest extends TestCase
             return $id === 2 && $roles === [3, 4];
         })->andReturnNull();
 
-        (new Update($model, $assign))->handle($this->dto(['roleIds' => [3, 4]]));
+        (new Update($model, $assign))->handle($this->dto(['role_ids' => [3, 4]]));
 
         $this->assertTrue($assignCalled);
     }
@@ -139,7 +139,7 @@ class UpdateTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        $this->buildAction($model)->handle(new UpdateAdminDto(id: 999, name: 'x'));
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['id' => 999, 'name' => 'x']));
     }
 
     public function testUpdateFailsWhenDuplicateUsername(): void
@@ -185,7 +185,7 @@ class UpdateTest extends TestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('无权修改其他管理员信息');
 
-        $this->buildAction($model)->handle(new UpdateAdminDto(id: 10, name: 'hack'));
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['id' => 10, 'name' => 'hack']));
     }
 
     public function testNormalAdminCanUpdateSelf(): void
@@ -197,7 +197,7 @@ class UpdateTest extends TestCase
         $model->shouldReceive('find')->with(5)->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
-        $result = $this->buildAction($model)->handle(new UpdateAdminDto(id: 5, name: 'myname'));
+        $result = $this->buildAction($model)->handle(AdminRequest::fromArray(['id' => 5, 'name' => 'myname']));
 
         $this->assertIsArray($result);
     }
@@ -214,7 +214,7 @@ class UpdateTest extends TestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('无权修改管理员类型');
 
-        $this->buildAction($model)->handle(new UpdateAdminDto(id: 5, isAdmin: 1));
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['id' => 5, 'is_admin' => 1]));
     }
 
     public function testSuperAdminCanChangeIsAdmin(): void
@@ -224,7 +224,7 @@ class UpdateTest extends TestCase
         $model->shouldReceive('find')->with(2)->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
-        $result = $this->buildAction($model)->handle($this->dto(['isAdmin' => 1]));
+        $result = $this->buildAction($model)->handle($this->dto(['is_admin' => 1]));
 
         $this->assertIsArray($result);
     }
@@ -244,7 +244,7 @@ class UpdateTest extends TestCase
         $model->shouldReceive('find')->with(2)->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
-        $this->buildAction($model)->handle($this->dto(['name' => 'x', 'roleIds' => [1]]));
+        $this->buildAction($model)->handle($this->dto(['name' => 'x', 'role_ids' => [1]]));
 
         $this->assertArrayNotHasKey('id', $capturedData);
         $this->assertArrayNotHasKey('role_ids', $capturedData);
@@ -276,9 +276,8 @@ class UpdateTest extends TestCase
         return new Update($model, $assign);
     }
 
-    private function dto(array $overrides = []): UpdateAdminDto
+    private function dto(array $overrides = []): AdminRequest
     {
-        $defaults = ['id' => 2];
-        return new UpdateAdminDto(...array_merge($defaults, $overrides));
+        return AdminRequest::fromArray(array_merge(['id' => 2], $overrides));
     }
 }

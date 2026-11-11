@@ -13,26 +13,23 @@ declare(strict_types=1);
 namespace App\Controller\Notify;
 
 use App\Controller\AbstractController;
+use App\Dto\Notice\NoticeRequest;
+use App\Dto\Notice\NoticeResponse;
 use App\Service\Notice as NoticeAction;
-use App\Service\Notice\Dto\CreateNoticeDto;
-use App\Service\Notice\Dto\UpdateNoticeDto;
 
 class NoticeController extends AbstractController
 {
-    public function create(): array
+    public function create(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        $dto = CreateNoticeDto::fromArray($data);
-        $result = container()->get(NoticeAction\Create::class)->handle($dto);
-        return $this->success(['id' => $result], '创建成功');
+        $id = container()->get(NoticeAction\Create::class)->handle($request);
+        return $this->success(['id' => $id], '创建成功');
     }
 
-    public function update(): array
+    public function update(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $dto = UpdateNoticeDto::fromArray($data);
-        container()->get(NoticeAction\Update::class)->handle($dto);
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        container()->get(NoticeAction\Update::class)->handle($request);
         return $this->success(null, '更新成功');
     }
 
@@ -43,39 +40,40 @@ class NoticeController extends AbstractController
         return $this->success(null, '删除成功');
     }
 
-    public function publish(): array
+    public function publish(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        container()->get(NoticeAction\Publish::class)->handle($data);
+        container()->get(NoticeAction\Publish::class)->handle($request->toArray());
         return $this->success(null, '发布成功');
     }
 
-    public function withdraw(): array
+    public function withdraw(NoticeRequest $request): array
     {
-        $id = (int) ($this->request->all()['id'] ?? 0);
+        // 撤回接口的 id 在请求体里（路由未带参数）
+        $id = (int) ($request->id ?? $this->request->route('id', 0));
         container()->get(NoticeAction\Withdraw::class)->handle($id);
         return $this->success(null, '撤回成功');
     }
 
-    public function setTargets(): array
+    public function setTargets(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        container()->get(NoticeAction\SetTargets::class)->handle($data);
+        container()->get(NoticeAction\SetTargets::class)->handle($request->toArray());
         return $this->success(null, '设置成功');
     }
 
-    public function markRead(): array
+    public function markRead(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        container()->get(NoticeAction\MarkRead::class)->handle($data);
+        container()->get(NoticeAction\MarkRead::class)->handle($request->toArray());
         return $this->success(null, '标记成功');
     }
 
-    public function userNotices(): array
+    public function userNotices(NoticeRequest $request): array
     {
-        $data = $this->request->all();
+        // 普通用户只能查自己的通知，userId 由登录态决定
+        $data = $request->toQueryArray();
+        $data['user_id'] = (int) currentUser('id');
+
         $result = container()->get(NoticeAction\GetUserNotices::class)->handle($data);
-        return $this->success($result, '获取成功');
+        return $this->success(NoticeResponse::page($result), '获取成功');
     }
 
     public function unreadCount(): array
@@ -85,17 +83,15 @@ class NoticeController extends AbstractController
         return $this->success(['count' => $result], '获取成功');
     }
 
-    public function statistics(): array
+    public function statistics(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(NoticeAction\GetStatistics::class)->handle($data);
+        $result = container()->get(NoticeAction\GetStatistics::class)->handle($request->toQueryArray());
         return $this->success($result, '获取成功');
     }
 
-    public function batchPush(): array
+    public function batchPush(NoticeRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(NoticeAction\BatchPushToUsers::class)->handle($data);
+        $result = container()->get(NoticeAction\BatchPushToUsers::class)->handle($request->toArray());
         return $this->success(['count' => $result], '推送成功');
     }
 }

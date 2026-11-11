@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Menu;
 
 use App\Common\CacheKeys;
+use App\Dto\Menu\MenuRequest;
 use App\Model\Menu\SysMenuModel;
-use App\Service\Menu\Dto\CreateMenuDto;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -25,48 +25,54 @@ class Create
     ) {
     }
 
-    public function handle(CreateMenuDto $dto): array
+    public function handle(MenuRequest $request): array
     {
-        ! $this->menuModel->isFieldUnique(['menu_code' => $dto->menuCode])
-            && paramError("菜单标识码 {$dto->menuCode} 已存在");
+        $menuCode = (string) $request->menu_code;
+        ! $this->menuModel->isFieldUnique(['menu_code' => $menuCode])
+            && paramError("菜单标识码 {$menuCode} 已存在");
 
-        if ($dto->parentId && $dto->parentId > 0) {
-            ! $this->menuModel->where('id', $dto->parentId)->exists()
-                && paramError("父级菜单ID {$dto->parentId} 不存在");
+        $parentId = (int) ($request->parent_id ?? 0);
+        if ($parentId > 0) {
+            ! $this->menuModel->where('id', $parentId)->exists()
+                && paramError("父级菜单ID {$parentId} 不存在");
         }
 
-        // 目录类型不能有 permission_code
-        if (in_array($dto->type, [0, '0', 'directory'], true)) {
-            ! empty($dto->permissionCodes) && paramError('目录类型不能设置权限标识');
-        } else {
-            // 非目录类型必须提供 permission_codes
-            empty($dto->permissionCodes) && paramError('非目录类型必须设置权限标识');
-        }
+        $permissionCodes = $request->permission_codes ?? [];
+        $this->assertPermissionCodes((int) ($request->type ?? 2), $permissionCodes);
 
         Db::beginTransaction();
         try {
-            $dbData = $dto->toDbArray();
-            unset($dbData['permission_codes']);
-
-            // permission_codes 存储为逗号分隔的字符串
-            $dbData['permission_code'] = ! empty($dto->permissionCodes)
-                ? implode(',', $dto->permissionCodes)
-                : null;
-            $dbData['parent_id'] = $dbData['parent_id'] ?? 0;
+            $dbData = $request->toDbArrayFiltered();
+            $dbData['parent_id'] = $parentId;
+            // permission_codes 落库为逗号分隔字符串，字段是 permission_code
+            $dbData['permission_code'] = $permissionCodes === [] ? null : implode(',', $permissionCodes);
+            $dbData['create_by'] = (int) currentUser('id');
 
             $menu = $this->menuModel->create($dbData);
 
-            $result = $menu->toArray();
-            $result['permission_codes'] = ! empty($result['permission_code'])
-                ? explode(',', $result['permission_code'])
-                : [];
-
             Db::commit();
             CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER);
-            return CreateMenuDto::dbToFront($result);
+
+            return $menu->toArray();
         } catch (Throwable $e) {
             Db::rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * 目录类型不能有权限标识，非目录类型必须有.
+     *
+     * @param array<int, string> $permissionCodes
+     */
+    private function assertPermissionCodes(int $type, array $permissionCodes): void
+    {
+        if ($type === 0) {
+            $permissionCodes !== [] && paramError('目录类型不能设置权限标识');
+
+            return;
+        }
+
+        $permissionCodes === [] && paramError('非目录类型必须设置权限标识');
     }
 }

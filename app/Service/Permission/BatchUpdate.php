@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
+use App\Dto\Permission\PermissionRequest;
 use App\Model\Permission\SysPermissionDictModel;
-use App\Service\Permission\Dto\PermissionItemDto;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -26,20 +26,19 @@ class BatchUpdate
     }
 
     /**
-     * @param PermissionItemDto[] $items
+     * @param PermissionRequest[] $items
      */
     public function handle(array $items): array
     {
         empty($items) && paramError('权限数据不能为空');
 
-        $updatedPermissions = [];
+        $updated = [];
 
         Db::beginTransaction();
         try {
             foreach ($items as $item) {
-                $dbData = $item->toDbArrayFiltered();
-                $id = $dbData['id'] ?? null;
-                if (! $id) {
+                $id = (int) $item->id;
+                if ($id <= 0) {
                     continue;
                 }
 
@@ -48,23 +47,22 @@ class BatchUpdate
                     continue;
                 }
 
-                if (! empty($dbData['perm_code']) && $dbData['perm_code'] !== $permission->perm_code) {
-                    $this->permissionModel->where('perm_code', $dbData['perm_code'])
+                if ($item->perm_code && $item->perm_code !== $permission->perm_code) {
+                    $this->permissionModel->where('perm_code', $item->perm_code)
                         ->where('id', '!=', $id)
-                        ->exists() && paramError("权限编码 {$dbData['perm_code']} 已存在");
+                        ->exists() && paramError("权限编码 {$item->perm_code} 已存在");
                 }
 
-                unset($dbData['id']);
-                $permission->update($dbData);
-                $updatedPermissions[] = $permission;
+                $permission->update($item->toDbArrayFiltered());
+                $updated[] = $permission;
             }
 
             Db::commit();
             CacheKeys::flush(CacheKeys::PERM_OPTIONS, CacheKeys::PERM_TREE, CacheKeys::PERM_API, CacheKeys::PERM_CODES, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER);
 
             return [
-                'updated' => $updatedPermissions,
-                'updated_count' => count($updatedPermissions),
+                'updated' => $updated,
+                'updated_count' => count($updated),
             ];
         } catch (Throwable $e) {
             Db::rollBack();

@@ -12,11 +12,11 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Permission;
 
+use App\Dto\Permission\PermissionRequest;
 use App\Exception\BusinessException;
 use App\Model\Permission\SysPermissionDictModel;
 use App\Service\Permission\Create;
 use App\Service\Permission\Delete;
-use App\Service\Permission\Dto\PermissionItemDto;
 use App\Service\Permission\GetInfo;
 use App\Service\Permission\Update;
 use Hyperf\Context\Context;
@@ -57,7 +57,12 @@ class PermissionTest extends TestCase
         $model->shouldReceive('create')->once()->andReturn($created);
 
         $result = (new Create($model))->handle(
-            new PermissionItemDto(permCode: 'user:add', permName: '新增用户', apiPath: '/api/user/add', httpMethod: 'POST')
+            PermissionRequest::fromArray([
+                'perm_code' => 'user:add',
+                'perm_name' => '新增用户',
+                'api_path' => '/api/user/add',
+                'http_method' => 'POST',
+            ])
         );
 
         $this->assertSame('user:add', $result['perm_code']);
@@ -72,28 +77,29 @@ class PermissionTest extends TestCase
         $this->expectExceptionMessage('权限编码 user:add 已存在');
 
         (new Create($model))->handle(
-            new PermissionItemDto(permCode: 'user:add', permName: '新增')
+            PermissionRequest::fromArray(['perm_code' => 'user:add', 'perm_name' => '新增'])
         );
     }
 
-    public function testCreatePermissionEmptyCode(): void
+    public function testCreatePermissionDefaultsParentId(): void
     {
+        $created = Mockery::mock(stdClass::class);
+        $created->shouldReceive('toArray')->andReturn(['id' => 1]);
+
+        $captured = null;
         $model = Mockery::mock(SysPermissionDictModel::class);
+        $model->shouldReceive('isFieldUnique')->andReturn(true);
+        $model->shouldReceive('create')->withArgs(function (array $data) use (&$captured) {
+            $captured = $data;
+            return true;
+        })->andReturn($created);
 
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('权限编码不能为空');
+        (new Create($model))->handle(
+            PermissionRequest::fromArray(['perm_code' => 'x:y', 'perm_name' => '名'])
+        );
 
-        (new Create($model))->handle(new PermissionItemDto(permName: '无编码'));
-    }
-
-    public function testCreatePermissionEmptyName(): void
-    {
-        $model = Mockery::mock(SysPermissionDictModel::class);
-
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('权限名称不能为空');
-
-        (new Create($model))->handle(new PermissionItemDto(permCode: 'code'));
+        // 未提交 parent_id 时补 0，避免写入 NULL
+        $this->assertSame(0, $captured['parent_id']);
     }
 
     // ==================== Update ====================
@@ -101,7 +107,6 @@ class PermissionTest extends TestCase
     public function testUpdatePermissionSuccess(): void
     {
         $perm = Mockery::mock(SysPermissionDictModel::class);
-        $perm->shouldReceive('__get')->with('perm_code')->andReturn('old_code');
         $perm->shouldReceive('getAttribute')->andReturnUsing(fn ($k) => match ($k) {
             'perm_code' => 'old_code', default => null,
         });
@@ -115,7 +120,7 @@ class PermissionTest extends TestCase
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $result = (new Update($model))->handle(
-            new PermissionItemDto(id: 1, permCode: 'new_code', permName: '更新后')
+            PermissionRequest::fromArray(['id' => 1, 'perm_code' => 'new_code', 'perm_name' => '更新后'])
         );
 
         $this->assertSame('new_code', $result['perm_code']);
@@ -129,13 +134,12 @@ class PermissionTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new Update($model))->handle(new PermissionItemDto(id: 999, permName: 'x'));
+        (new Update($model))->handle(PermissionRequest::fromArray(['id' => 999, 'perm_name' => 'x']));
     }
 
     public function testUpdatePermissionDuplicateCode(): void
     {
         $perm = Mockery::mock(SysPermissionDictModel::class);
-        $perm->shouldReceive('__get')->with('perm_code')->andReturn('old');
         $perm->shouldReceive('getAttribute')->andReturnUsing(fn ($k) => match ($k) {
             'perm_code' => 'old', default => null,
         });
@@ -147,17 +151,7 @@ class PermissionTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('权限编码 taken 已存在');
 
-        (new Update($model))->handle(new PermissionItemDto(id: 1, permCode: 'taken'));
-    }
-
-    public function testUpdatePermissionZeroId(): void
-    {
-        $model = Mockery::mock(SysPermissionDictModel::class);
-
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('权限ID不能为空');
-
-        (new Update($model))->handle(new PermissionItemDto(id: 0));
+        (new Update($model))->handle(PermissionRequest::fromArray(['id' => 1, 'perm_code' => 'taken']));
     }
 
     // ==================== Delete ====================
@@ -171,9 +165,7 @@ class PermissionTest extends TestCase
         $model->shouldReceive('where->pluck->toArray')->andReturn([]);
         $model->shouldReceive('whereIn->delete')->andReturn(1);
 
-        $result = (new Delete($model))->handle(['id' => 5]);
-
-        $this->assertTrue($result);
+        $this->assertTrue((new Delete($model))->handle(['id' => 5]));
     }
 
     public function testDeletePermissionNotFound(): void

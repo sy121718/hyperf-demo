@@ -12,10 +12,10 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
 use App\Service\Admin\Manage\Create;
-use App\Service\Admin\Manage\Dto\CreateAdminDto;
 use App\Service\Role\AssignRoles;
 use Hyperf\Context\Context;
 use Hyperf\Testing\TestCase;
@@ -44,12 +44,10 @@ class CreateTest extends TestCase
 
     // ==================== 创建成功 ====================
 
-    public function testCreateSuccessReturnsId(): void
+    public function testCreateSuccessReturnsData(): void
     {
-        $model = $this->mockModel();
-        $action = new Create($model, $this->mockAssignRoles());
-
-        $result = $action->handle($this->dto());
+        $result = (new Create($this->mockModel(), $this->mockAssignRoles()))
+            ->handle($this->dto());
 
         $this->assertArrayHasKey('id', $result);
         $this->assertSame(100, $result['id']);
@@ -61,73 +59,41 @@ class CreateTest extends TestCase
         $model = $this->mockModel();
         $model->shouldReceive('create')->once()->withArgs(function (array $data) use (&$capturedData) {
             $capturedData = $data;
-            $obj = Mockery::mock(stdClass::class);
-            $obj->id = 1;
             return true;
-        })->andReturnUsing(function () {
-            $obj = Mockery::mock(stdClass::class);
-            $obj->id = 1;
-            return $obj;
-        });
+        })->andReturn($this->fakeCreated());
 
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle($this->dto(['password' => 'secret123']));
+        (new Create($model, $this->mockAssignRoles()))
+            ->handle($this->dto(['password' => 'secret123']));
 
         $this->assertNotSame('secret123', $capturedData['password']);
         $this->assertTrue(password_verify('secret123', $capturedData['password']));
     }
 
-    public function testCreateSetsCreateByAndUpdateBy(): void
-    {
-        $capturedData = null;
-        $model = $this->mockModel();
-        $model->shouldReceive('create')->once()->withArgs(function (array $data) use (&$capturedData) {
-            $capturedData = $data;
-            return true;
-        })->andReturnUsing(function () {
-            $obj = Mockery::mock(stdClass::class);
-            $obj->id = 1;
-            return $obj;
-        });
-
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle($this->dto());
-
-        $this->assertSame(1, $capturedData['create_by']);
-        $this->assertSame(1, $capturedData['update_by']);
-    }
-
     public function testCreateWithRolesCallsAssignRoles(): void
     {
-        $model = $this->mockModel();
-        $created = Mockery::mock(stdClass::class);
-        $created->id = 50;
-        $model->shouldReceive('create')->andReturn($created);
-
         $rolesCalled = false;
+
         $assign = Mockery::mock(AssignRoles::class);
         $assign->shouldReceive('handle')->withArgs(function (int $adminId, array $roleIds) use (&$rolesCalled) {
             $rolesCalled = true;
-            return $adminId === 50 && $roleIds === [1, 2, 3];
+            return $adminId === 100 && $roleIds === [1, 2, 3];
         })->andReturnNull();
 
-        $action = new Create($model, $assign);
-        $action->handle($this->dto(['roleIds' => [1, 2, 3]]));
+        (new Create($this->mockModel(), $assign))
+            ->handle($this->dto(['role_ids' => [1, 2, 3]]));
 
         $this->assertTrue($rolesCalled);
     }
 
     public function testCreateWithoutRolesDoesNotCallAssignRoles(): void
     {
-        $model = $this->mockModel();
         $assignCalled = false;
         $assign = Mockery::mock(AssignRoles::class);
         $assign->shouldReceive('handle')->andReturnUsing(function () use (&$assignCalled) {
             $assignCalled = true;
         });
 
-        $action = new Create($model, $assign);
-        $action->handle($this->dto());
+        (new Create($this->mockModel(), $assign))->handle($this->dto());
 
         $this->assertFalse($assignCalled);
     }
@@ -139,58 +105,46 @@ class CreateTest extends TestCase
         $model->shouldReceive('create')->withArgs(function (array $data) use (&$capturedData) {
             $capturedData = $data;
             return true;
-        })->andReturnUsing(function () {
-            $obj = Mockery::mock(stdClass::class);
-            $obj->id = 1;
-            return $obj;
-        });
+        })->andReturn($this->fakeCreated());
 
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle($this->dto(['roleIds' => [1, 2]]));
+        (new Create($model, $this->mockAssignRoles()))
+            ->handle($this->dto(['role_ids' => [1, 2]]));
 
         $this->assertArrayNotHasKey('role_ids', $capturedData);
     }
 
-    public function testCreateWithDefaultStatus(): void
+    public function testCreateOmitsUnsubmittedFields(): void
     {
         $capturedData = null;
         $model = $this->mockModel();
         $model->shouldReceive('create')->withArgs(function (array $data) use (&$capturedData) {
             $capturedData = $data;
             return true;
-        })->andReturnUsing(function () {
-            $obj = Mockery::mock(stdClass::class);
-            $obj->id = 1;
-            return $obj;
-        });
+        })->andReturn($this->fakeCreated());
 
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle($this->dto());
+        (new Create($model, $this->mockAssignRoles()))->handle($this->dto());
 
-        $this->assertSame(1, $capturedData['status']);
+        // 未提交的字段不写入，交给数据库默认值
+        $this->assertArrayNotHasKey('status', $capturedData);
+        $this->assertArrayNotHasKey('phone', $capturedData);
+    }
+
+    public function testCreateKeepsPhoneField(): void
+    {
+        $capturedData = null;
+        $model = $this->mockModel();
+        $model->shouldReceive('create')->withArgs(function (array $data) use (&$capturedData) {
+            $capturedData = $data;
+            return true;
+        })->andReturn($this->fakeCreated());
+
+        (new Create($model, $this->mockAssignRoles()))
+            ->handle($this->dto(['phone' => '13812345678']));
+
+        $this->assertSame('13812345678', $capturedData['phone']);
     }
 
     // ==================== 创建失败 ====================
-
-    public function testCreateFailsWithEmptyUsername(): void
-    {
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('用户名不能为空');
-
-        $model = $this->mockModel();
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle(new CreateAdminDto(username: '', password: 'pass123'));
-    }
-
-    public function testCreateFailsWithEmptyPassword(): void
-    {
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('密码不能为空');
-
-        $model = $this->mockModel();
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle(new CreateAdminDto(username: 'user', password: ''));
-    }
 
     public function testCreateFailsWithDuplicateUsername(): void
     {
@@ -199,43 +153,25 @@ class CreateTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('用户名已存在');
 
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle($this->dto());
-    }
-
-    // ==================== DTO 映射 ====================
-
-    public function testDtoMobileMapsToDatabasePhone(): void
-    {
-        $capturedData = null;
-        $model = $this->mockModel();
-        $model->shouldReceive('create')->withArgs(function (array $data) use (&$capturedData) {
-            $capturedData = $data;
-            return true;
-        })->andReturnUsing(function () {
-            $obj = Mockery::mock(stdClass::class);
-            $obj->id = 1;
-            return $obj;
-        });
-
-        $action = new Create($model, $this->mockAssignRoles());
-        $action->handle($this->dto(['mobile' => '13812345678']));
-
-        $this->assertArrayHasKey('phone', $capturedData);
-        $this->assertSame('13812345678', $capturedData['phone']);
-        $this->assertArrayNotHasKey('mobile', $capturedData);
+        (new Create($model, $this->mockAssignRoles()))->handle($this->dto());
     }
 
     private function mockModel(bool $usernameUnique = true): MockInterface
     {
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('isFieldUnique')->byDefault()->andReturn($usernameUnique);
-
-        $created = Mockery::mock(stdClass::class);
-        $created->id = 100;
-        $model->shouldReceive('create')->byDefault()->andReturn($created);
+        $model->shouldReceive('create')->byDefault()->andReturn($this->fakeCreated());
 
         return $model;
+    }
+
+    private function fakeCreated(): stdClass
+    {
+        $created = Mockery::mock(stdClass::class);
+        $created->id = 100;
+        $created->shouldReceive('fresh->toArray')->andReturn(['id' => 100, 'username' => 'newuser']);
+
+        return $created;
     }
 
     private function mockAssignRoles(): MockInterface
@@ -245,9 +181,11 @@ class CreateTest extends TestCase
         return $assign;
     }
 
-    private function dto(array $overrides = []): CreateAdminDto
+    private function dto(array $overrides = []): AdminRequest
     {
-        $defaults = ['username' => 'newuser', 'password' => 'pass123'];
-        return new CreateAdminDto(...array_merge($defaults, $overrides));
+        return AdminRequest::fromArray(array_merge([
+            'username' => 'newuser',
+            'password' => 'pass123',
+        ], $overrides));
     }
 }

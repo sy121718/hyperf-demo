@@ -10,12 +10,19 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace App\Request\System;
+namespace App\Dto\Auth;
 
-use App\Request\BaseRequest;
+use App\Dto\BaseRequestDto;
 
-class LoginRequest extends BaseRequest
+/**
+ * 登录请求参数.
+ */
+class LoginRequest extends BaseRequestDto
 {
+    public ?string $username = null;
+
+    public ?string $password = null;
+
     public function rules(): array
     {
         return [

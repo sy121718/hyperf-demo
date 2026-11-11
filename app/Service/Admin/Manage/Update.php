@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
-use App\Service\Admin\Manage\Dto\UpdateAdminDto;
 use App\Service\Role\AssignRoles;
 use Hyperf\DbConnection\Db;
 use Throwable;
@@ -26,64 +26,54 @@ class Update
     ) {
     }
 
-    public function handle(UpdateAdminDto $dto): array
+    public function handle(AdminRequest $request): array
     {
-        $admin = $this->adminModel->find($dto->id);
+        $id = (int) $request->id;
+        $admin = $this->adminModel->find($id);
         ! $admin && paramError('管理员不存在', 404);
 
         $currentUserId = (int) currentUser('id');
         $isSuperAdmin = currentUser('is_admin') == 1;
 
-        if (! $isSuperAdmin && $currentUserId !== $dto->id) {
+        if (! $isSuperAdmin && $currentUserId !== $id) {
             paramError('无权修改其他管理员信息', 403);
         }
 
-        if (! $isSuperAdmin && $dto->isAdmin !== null) {
+        if (! $isSuperAdmin && $request->is_admin !== null) {
             paramError('无权修改管理员类型', 403);
         }
 
-        $this->validateUniqueFields($dto, $admin);
-        $data = $this->prepareData($dto);
+        if ($request->username && $request->username !== $admin->username) {
+            ! $this->adminModel->isFieldUnique(['username' => $request->username], $id)
+                && paramError('用户名已被占用');
+        }
+
+        if ($request->email && $request->email !== $admin->email) {
+            ! $this->adminModel->isFieldUnique(['email' => $request->email], $id)
+                && paramError('邮箱已被占用');
+        }
 
         Db::beginTransaction();
         try {
+            $data = $request->toDbArrayFiltered();
+            if ($request->password) {
+                $data['password'] = password_hash((string) $request->password, PASSWORD_BCRYPT);
+            } else {
+                unset($data['password']);
+            }
+
             $admin->update($data);
 
-            $dto->shouldUpdateRoles()
-                && $this->assignRolesAction->handle($dto->id, $dto->roleIds);
+            // role_ids 为 null 表示不修改角色
+            $request->role_ids !== null
+                && $this->assignRolesAction->handle($id, $request->role_ids);
 
             Db::commit();
-            return UpdateAdminDto::dbToFront($admin->fresh()->toArray());
+
+            return $admin->fresh()->toArray();
         } catch (Throwable $e) {
             Db::rollBack();
             throw $e;
         }
-    }
-
-    private function validateUniqueFields(UpdateAdminDto $dto, SysAdminModel $admin): void
-    {
-        if ($dto->username !== null && $dto->username !== $admin->username) {
-            ! $this->adminModel->isFieldUnique(['username' => $dto->username], $dto->id)
-                && paramError('用户名已被占用');
-        }
-
-        if ($dto->email !== null && $dto->email !== $admin->email) {
-            ! $this->adminModel->isFieldUnique(['email' => $dto->email], $dto->id)
-                && paramError('邮箱已被占用');
-        }
-    }
-
-    private function prepareData(UpdateAdminDto $dto): array
-    {
-        $dbData = $dto->toDbArrayFiltered();
-        unset($dbData['id'], $dbData['role_ids'], $dbData['password']);
-
-        if ($dto->shouldUpdatePassword()) {
-            $dbData['password'] = password_hash($dto->password, PASSWORD_BCRYPT);
-        }
-
-        $dbData['update_by'] = (int) currentUser('id');
-
-        return $dbData;
     }
 }

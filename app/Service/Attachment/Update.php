@@ -12,9 +12,9 @@ declare(strict_types=1);
 
 namespace App\Service\Attachment;
 
+use App\Dto\Attachment\AttachmentRequest;
 use App\Model\Attachment\SysAttachmentModel;
 use App\Model\FileCategory\SysFileCategoryModel;
-use App\Service\Attachment\Dto\UpdateAttachmentDto;
 
 class Update
 {
@@ -23,20 +23,18 @@ class Update
     ) {
     }
 
-    public function handle(UpdateAttachmentDto $dto): array
+    public function handle(AttachmentRequest $request): array
     {
-        $attachment = $this->attachmentModel->find($dto->id);
-        ! $attachment && paramError('附件不存在');
+        $id = (int) $request->id;
+        $attachment = $this->attachmentModel->find($id);
+        ! $attachment && paramError('附件不存在', 404);
 
-        if ($dto->categoryId !== null && $dto->categoryId > 0) {
-            $categoryExists = SysFileCategoryModel::where('id', $dto->categoryId)->exists();
-            ! $categoryExists && paramError('文件分类不存在');
+        if ($request->category_id !== null && $request->category_id > 0) {
+            ! SysFileCategoryModel::where('id', $request->category_id)->exists()
+                && paramError('文件分类不存在');
         }
 
-        $updateData = $dto->toDbArrayFiltered();
-        unset($updateData['id']);
-
-        $attachment->update($updateData);
+        $attachment->update($request->toDbArrayFiltered());
 
         return $attachment->fresh()->toArray();
     }

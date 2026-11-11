@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
+use App\Dto\Permission\PermissionRequest;
 use App\Model\Permission\SysPermissionDictModel;
-use App\Service\Permission\Dto\PermissionItemDto;
 
 class Update
 {
@@ -23,23 +23,18 @@ class Update
     ) {
     }
 
-    public function handle(PermissionItemDto $dto): array
+    public function handle(PermissionRequest $request): array
     {
-        $id = $dto->id;
-        ($id === null || $id <= 0) && paramError('权限ID不能为空');
-
+        $id = (int) $request->id;
         $permission = $this->permissionModel->find($id);
         ! $permission && paramError('权限不存在', 404);
 
-        if ($dto->permCode && $dto->permCode !== $permission->perm_code) {
-            ! $this->permissionModel->isFieldUnique(['perm_code' => $dto->permCode], $id)
-                && paramError("权限编码 {$dto->permCode} 已存在");
+        if ($request->perm_code && $request->perm_code !== $permission->perm_code) {
+            ! $this->permissionModel->isFieldUnique(['perm_code' => $request->perm_code], $id)
+                && paramError("权限编码 {$request->perm_code} 已存在");
         }
 
-        $updateData = $dto->toDbArrayFiltered();
-        unset($updateData['id']);
-
-        $permission->update($updateData);
+        $permission->update($request->toDbArrayFiltered());
 
         CacheKeys::flush(CacheKeys::PERM_OPTIONS, CacheKeys::PERM_TREE, CacheKeys::PERM_API, CacheKeys::PERM_CODES, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER);
 

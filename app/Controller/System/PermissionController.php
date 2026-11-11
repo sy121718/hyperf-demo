@@ -13,33 +13,30 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\Permission\PermissionRequest;
+use App\Dto\Permission\PermissionResponse;
 use App\Service\Permission as PermAction;
-use App\Service\Permission\Dto\PermissionItemDto;
 
 class PermissionController extends AbstractController
 {
-    public function tree(): array
+    public function tree(PermissionRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(PermAction\GetTreeList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(PermAction\GetTreeList::class)->handle($request->toQueryArray());
+        return $this->success(PermissionResponse::collection($result), '获取成功');
     }
 
-    public function create(): array
+    public function create(PermissionRequest $request): array
     {
-        $data = $this->request->all();
-        $dto = PermissionItemDto::fromArray($data);
-        $result = container()->get(PermAction\Create::class)->handle($dto);
-        return $this->success($result, '创建成功');
+        $result = container()->get(PermAction\Create::class)->handle($request);
+        return $this->success(PermissionResponse::saved($result), '创建成功');
     }
 
-    public function update(): array
+    public function update(PermissionRequest $request): array
     {
-        $data = $this->request->all();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $dto = PermissionItemDto::fromArray($data);
-        $result = container()->get(PermAction\Update::class)->handle($dto);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(PermAction\Update::class)->handle($request);
+        return $this->success(PermissionResponse::saved($result), '更新成功');
     }
 
     public function delete(): array
@@ -53,7 +50,7 @@ class PermissionController extends AbstractController
     {
         $id = (int) $this->request->route('id', 0);
         $result = container()->get(PermAction\GetInfo::class)->handle($id);
-        return $this->success($result, '获取成功');
+        return $this->success(PermissionResponse::detail($result), '获取成功');
     }
 
     public function options(): array
@@ -62,32 +59,34 @@ class PermissionController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function batchDelete(): array
+    public function batchDelete(PermissionRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(PermAction\BatchDelete::class)->handle($data);
+        $result = container()->get(PermAction\BatchDelete::class)->handle($request->toArray());
         return $this->success(['deleted' => $result], '批量删除成功');
     }
 
-    public function batchCreate(): array
+    public function batchCreate(PermissionRequest $request): array
     {
-        $data = $this->request->all();
-        $items = [];
-        foreach ($data['items'] ?? [] as $item) {
-            $items[] = PermissionItemDto::fromArray($item);
-        }
+        $items = array_map(
+            static fn (array $item) => PermissionRequest::fromArray($item),
+            $request->items ?? []
+        );
+
         $result = container()->get(PermAction\BatchCreate::class)->handle($items);
-        return $this->success($result, '批量创建成功');
+        return $this->success([
+            'created_count' => $result['created_count'],
+            'skipped_codes' => $result['skipped_codes'],
+        ], '批量创建成功');
     }
 
-    public function batchUpdate(): array
+    public function batchUpdate(PermissionRequest $request): array
     {
-        $data = $this->request->all();
-        $items = [];
-        foreach ($data['items'] ?? [] as $item) {
-            $items[] = PermissionItemDto::fromArray($item);
-        }
+        $items = array_map(
+            static fn (array $item) => PermissionRequest::fromArray($item),
+            $request->items ?? []
+        );
+
         $result = container()->get(PermAction\BatchUpdate::class)->handle($items);
-        return $this->success($result, '批量更新成功');
+        return $this->success(['updated_count' => $result['updated_count']], '批量更新成功');
     }
 }

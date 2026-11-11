@@ -73,4 +73,28 @@ class SysAdminModel extends BaseModel
     {
         return $this->hasMany(SysAdminSessionsModel::class, 'admin_id');
     }
+
+    /**
+     * 新建时自动生成 admin_code（表字段 NOT NULL 且唯一）.
+     */
+    public function save(array $options = []): bool
+    {
+        if (! $this->exists && empty($this->getAttribute('admin_code'))) {
+            $this->setAttribute('admin_code', $this->generateAdminCode());
+        }
+
+        return parent::save($options);
+    }
+
+    /**
+     * 生成唯一的管理员标识码。
+     */
+    protected function generateAdminCode(): string
+    {
+        do {
+            $code = 'a' . bin2hex(random_bytes(8));
+        } while (static::query()->where('admin_code', $code)->exists());
+
+        return $code;
+    }
 }

@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\CronJob;
 
+use App\Dto\CronJob\CronJobRequest;
 use App\Model\CronJob\SysCronJobModel;
-use App\Service\CronJob\Dto\CreateCronJobDto;
 
 class Create
 {
@@ -22,13 +22,9 @@ class Create
     ) {
     }
 
-    public function handle(CreateCronJobDto $dto): array
+    public function handle(CronJobRequest $request): array
     {
-        empty($dto->jobName) && paramError('任务名称不能为空');
-        empty($dto->cronExpression) && paramError('Cron表达式不能为空');
-        empty($dto->command) && paramError('执行命令不能为空');
-
-        $dbData = $dto->toDbArray();
+        $dbData = $request->toDbArrayFiltered();
         $dbData['job_category'] = $dbData['job_category'] ?? 'default';
         $dbData['sort_order'] = $dbData['sort_order'] ?? 0;
 

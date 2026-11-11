@@ -13,35 +13,30 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
-use App\Request\System\RoleRequest;
+use App\Dto\Role\RoleRequest;
+use App\Dto\Role\RoleResponse;
 use App\Service\Role as RoleAction;
-use App\Service\Role\Dto\CreateRoleDto;
-use App\Service\Role\Dto\UpdateRoleDto;
 
 class RoleController extends AbstractController
 {
     public function list(RoleRequest $request): array
     {
-        $data = $request->validated();
-        $result = container()->get(RoleAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(RoleAction\GetList::class)->handle($request->toQueryArray());
+        return $this->success(RoleResponse::page($result), '获取成功');
     }
 
     public function create(RoleRequest $request): array
     {
-        $data = $request->validated();
-        $dto = CreateRoleDto::fromArray($data);
-        $result = container()->get(RoleAction\Create::class)->handle($dto);
-        return $this->success($result, '创建成功');
+        $result = container()->get(RoleAction\Create::class)->handle($request);
+        return $this->success(RoleResponse::saved($result), '创建成功');
     }
 
     public function update(RoleRequest $request): array
     {
-        $data = $request->validated();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $dto = UpdateRoleDto::fromArray($data);
-        $result = container()->get(RoleAction\Update::class)->handle($dto);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(RoleAction\Update::class)->handle($request);
+        return $this->success(RoleResponse::saved($result), '更新成功');
     }
 
     public function delete(): array
@@ -55,7 +50,7 @@ class RoleController extends AbstractController
     {
         $id = (int) $this->request->route('id', 0);
         $result = container()->get(RoleAction\GetInfo::class)->handle($id);
-        return $this->success($result, '获取成功');
+        return $this->success(RoleResponse::detail($result), '获取成功');
     }
 
     public function all(): array
@@ -70,33 +65,28 @@ class RoleController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function assignMenus(): array
+    public function assignMenus(RoleRequest $request): array
     {
-        $data = $this->request->all();
-        $roleCode = $data['role_code'] ?? '';
-        $menuIds = $data['menu_ids'] ?? [];
-        $result = container()->get(RoleAction\AssignMenus::class)->handle($roleCode, $menuIds);
+        $result = container()->get(RoleAction\AssignMenus::class)
+            ->handle((string) $request->role_code, $request->menu_ids ?? []);
         return $this->success($result, '分配成功');
     }
 
-    public function assignToAdmin(): array
+    public function assignToAdmin(RoleRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(RoleAction\AssignRolesToAdmin::class)->handle($data);
+        $result = container()->get(RoleAction\AssignRolesToAdmin::class)->handle($request->toArray());
         return $this->success($result, '分配成功');
     }
 
-    public function removeFromAdmin(): array
+    public function removeFromAdmin(RoleRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(RoleAction\RemoveRoleFromAdmin::class)->handle($data);
+        $result = container()->get(RoleAction\RemoveRoleFromAdmin::class)->handle($request->toArray());
         return $this->success($result, '移除成功');
     }
 
-    public function batchDelete(): array
+    public function batchDelete(RoleRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(RoleAction\BatchDelete::class)->handle($data);
+        $result = container()->get(RoleAction\BatchDelete::class)->handle($request->toArray());
         return $this->success(['deleted' => $result], '批量删除成功');
     }
 }

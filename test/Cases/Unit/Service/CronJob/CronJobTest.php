@@ -12,12 +12,11 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\CronJob;
 
+use App\Dto\CronJob\CronJobRequest;
 use App\Exception\BusinessException;
 use App\Model\CronJob\SysCronJobModel;
 use App\Service\CronJob\Create;
 use App\Service\CronJob\Delete;
-use App\Service\CronJob\Dto\CreateCronJobDto;
-use App\Service\CronJob\Dto\UpdateCronJobDto;
 use App\Service\CronJob\GetInfo;
 use App\Service\CronJob\Update;
 use Mockery;
@@ -36,11 +35,11 @@ class CronJobTest extends TestCase
 
     public function testCreateSuccess(): void
     {
-        $dto = new CreateCronJobDto(
-            jobName: '测试任务',
-            cronExpression: '* * * * *',
-            command: 'php artisan test',
-        );
+        $request = CronJobRequest::fromArray([
+            'job_name' => '测试任务',
+            'cron_expression' => '* * * * *',
+            'command' => 'php artisan test',
+        ]);
 
         $created = Mockery::mock(SysCronJobModel::class)->makePartial();
         $created->shouldReceive('fresh->toArray')->andReturn([
@@ -53,25 +52,33 @@ class CronJobTest extends TestCase
         $model = Mockery::mock(SysCronJobModel::class);
         $model->shouldReceive('create')->once()->andReturn($created);
 
-        $action = new Create($model);
-        $result = $action->handle($dto);
+        $result = (new Create($model))->handle($request);
 
         $this->assertEquals('测试任务', $result['job_name']);
     }
 
-    public function testCreateEmptyName(): void
+    public function testCreateFillsDefaults(): void
     {
-        $dto = new CreateCronJobDto(
-            jobName: '',
-            cronExpression: '* * * * *',
-            command: 'php artisan test',
-        );
+        $request = CronJobRequest::fromArray([
+            'job_name' => '测试任务',
+            'cron_expression' => '* * * * *',
+            'command' => 'echo 1',
+        ]);
+
+        $captured = null;
+        $created = Mockery::mock(SysCronJobModel::class)->makePartial();
+        $created->shouldReceive('fresh->toArray')->andReturn(['id' => 1]);
 
         $model = Mockery::mock(SysCronJobModel::class);
-        $action = new Create($model);
+        $model->shouldReceive('create')->once()->withArgs(function (array $data) use (&$captured) {
+            $captured = $data;
+            return true;
+        })->andReturn($created);
 
-        $this->expectException(BusinessException::class);
-        $action->handle($dto);
+        (new Create($model))->handle($request);
+
+        $this->assertSame('default', $captured['job_category']);
+        $this->assertSame(0, $captured['sort_order']);
     }
 
     public function testGetInfoSuccess(): void
@@ -85,8 +92,7 @@ class CronJobTest extends TestCase
         $model = Mockery::mock(SysCronJobModel::class);
         $model->shouldReceive('find')->with(1)->andReturn($job);
 
-        $action = new GetInfo($model);
-        $result = $action->handle(1);
+        $result = (new GetInfo($model))->handle(1);
 
         $this->assertEquals('测试任务', $result['job_name']);
     }
@@ -96,15 +102,13 @@ class CronJobTest extends TestCase
         $model = Mockery::mock(SysCronJobModel::class);
         $model->shouldReceive('find')->with(999)->andReturn(null);
 
-        $action = new GetInfo($model);
-
         $this->expectException(BusinessException::class);
-        $action->handle(999);
+        (new GetInfo($model))->handle(999);
     }
 
     public function testUpdateSuccess(): void
     {
-        $dto = new UpdateCronJobDto(id: 1, jobName: '更新任务');
+        $request = CronJobRequest::fromArray(['id' => 1, 'job_name' => '更新任务']);
 
         $job = Mockery::mock(SysCronJobModel::class)->makePartial();
         $job->shouldReceive('update')->once()->andReturn(true);
@@ -116,10 +120,21 @@ class CronJobTest extends TestCase
         $model = Mockery::mock(SysCronJobModel::class);
         $model->shouldReceive('find')->with(1)->andReturn($job);
 
-        $action = new Update($model);
-        $result = $action->handle($dto);
+        $result = (new Update($model))->handle($request);
 
         $this->assertEquals('更新任务', $result['job_name']);
+    }
+
+    public function testUpdateNotFound(): void
+    {
+        $request = CronJobRequest::fromArray(['id' => 999, 'job_name' => 'x']);
+
+        $model = Mockery::mock(SysCronJobModel::class);
+        $model->shouldReceive('find')->with(999)->andReturn(null);
+
+        $this->expectException(BusinessException::class);
+        $this->expectExceptionCode(404);
+        (new Update($model))->handle($request);
     }
 
     public function testDeleteSuccess(): void
@@ -130,10 +145,7 @@ class CronJobTest extends TestCase
         $model = Mockery::mock(SysCronJobModel::class);
         $model->shouldReceive('find')->with(1)->andReturn($job);
 
-        $action = new Delete($model);
-        $result = $action->handle(1);
-
-        $this->assertTrue($result);
+        $this->assertTrue((new Delete($model))->handle(1));
     }
 
     public function testDeleteNotFound(): void
@@ -141,9 +153,7 @@ class CronJobTest extends TestCase
         $model = Mockery::mock(SysCronJobModel::class);
         $model->shouldReceive('find')->with(999)->andReturn(null);
 
-        $action = new Delete($model);
-
         $this->expectException(BusinessException::class);
-        $action->handle(999);
+        (new Delete($model))->handle(999);
     }
 }

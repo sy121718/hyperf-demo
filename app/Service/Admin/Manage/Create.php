@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
-use App\Service\Admin\Manage\Dto\CreateAdminDto;
 use App\Service\Role\AssignRoles;
 use Hyperf\DbConnection\Db;
 use Throwable;
@@ -26,23 +26,23 @@ class Create
     ) {
     }
 
-    public function handle(CreateAdminDto $dto): array
+    public function handle(AdminRequest $request): array
     {
-        empty($dto->username) && paramError('用户名不能为空');
-        empty($dto->password) && paramError('密码不能为空');
-
-        ! $this->adminModel->isFieldUnique(['username' => $dto->username])
+        $username = (string) $request->username;
+        ! $this->adminModel->isFieldUnique(['username' => $username])
             && paramError('用户名已存在');
 
-        $data = $this->prepareData($dto);
+        $data = $request->toDbArrayFiltered();
+        $data['password'] = password_hash((string) $request->password, PASSWORD_BCRYPT);
 
         $admin = null;
         Db::beginTransaction();
         try {
             $admin = $this->adminModel->create($data);
 
-            $dto->hasRoles()
-                && $this->assignRolesAction->handle($admin->id, $dto->roleIds);
+            // role_ids 是关联 ID 集合，不写进 sys_admin 表
+            ! empty($request->role_ids)
+                && $this->assignRolesAction->handle($admin->id, $request->role_ids);
 
             Db::commit();
         } catch (Throwable $e) {
@@ -50,18 +50,6 @@ class Create
             throw $e;
         }
 
-        return ['id' => $admin->id];
-    }
-
-    private function prepareData(CreateAdminDto $dto): array
-    {
-        $dbData = $dto->toDbArray();
-        unset($dbData['role_ids']);
-
-        $dbData['password'] = password_hash($dto->password, PASSWORD_BCRYPT);
-        $dbData['create_by'] = (int) currentUser('id');
-        $dbData['update_by'] = (int) currentUser('id');
-
-        return $dbData;
+        return $admin->fresh()->toArray();
     }
 }

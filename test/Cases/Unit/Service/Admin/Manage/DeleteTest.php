@@ -145,7 +145,7 @@ class DeleteTest extends TestCase
             return 1;
         });
         $roleModel = Mockery::mock(SysAdminRoleModel::class);
-        $roleModel->shouldReceive('where')->with('admin_id', 10)->andReturn($roleBuilder);
+        $roleModel->shouldReceive('where')->with('admin_code', 'a_victim')->andReturn($roleBuilder);
 
         $sessionModel = Mockery::mock(SysAdminSessionsModel::class);
         $this->mockDeleteChain($sessionModel);
@@ -163,7 +163,7 @@ class DeleteTest extends TestCase
         $model->shouldReceive('find')->with(10)->andReturn($admin);
 
         $roleModel = Mockery::mock(SysAdminRoleModel::class);
-        $this->mockDeleteChain($roleModel);
+        $this->mockDeleteChain($roleModel, 'admin_code');
 
         $sessionDel = false;
         $sessionBuilder = Mockery::mock(Builder::class);
@@ -182,7 +182,10 @@ class DeleteTest extends TestCase
 
     private function fakeAdmin(array $overrides = []): MockInterface
     {
-        $defaults = ['id' => 10, 'username' => 'victim', 'is_admin' => 0, 'status' => 1];
+        $defaults = [
+            'id' => 10, 'username' => 'victim', 'admin_code' => 'a_victim',
+            'is_admin' => 0, 'status' => 1,
+        ];
         $attrs = array_merge($defaults, $overrides);
 
         $admin = Mockery::mock(stdClass::class);
@@ -194,11 +197,11 @@ class DeleteTest extends TestCase
         return $admin;
     }
 
-    private function mockDeleteChain(MockInterface $model): void
+    private function mockDeleteChain(MockInterface $model, string $key = 'admin_id'): void
     {
         $builder = Mockery::mock(Builder::class);
         $builder->shouldReceive('delete')->andReturn(1);
-        $model->shouldReceive('where')->with('admin_id', Mockery::any())->andReturn($builder);
+        $model->shouldReceive('where')->with($key, Mockery::any())->andReturn($builder);
     }
 
     private function buildAction(?MockInterface $adminModel = null): Delete
@@ -206,7 +209,7 @@ class DeleteTest extends TestCase
         $adminModel ??= Mockery::mock(SysAdminModel::class);
 
         $roleModel = Mockery::mock(SysAdminRoleModel::class);
-        $this->mockDeleteChain($roleModel);
+        $this->mockDeleteChain($roleModel, 'admin_code');
 
         $sessionModel = Mockery::mock(SysAdminSessionsModel::class);
         $this->mockDeleteChain($sessionModel);

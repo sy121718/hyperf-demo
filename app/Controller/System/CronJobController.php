@@ -13,41 +13,37 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\CronJob\CronJobRequest;
+use App\Dto\CronJob\CronJobResponse;
 use App\Service\CronJob as CronJobAction;
-use App\Service\CronJob\Dto\CreateCronJobDto;
-use App\Service\CronJob\Dto\UpdateCronJobDto;
 
 class CronJobController extends AbstractController
 {
-    public function list(): array
+    public function list(CronJobRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(CronJobAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(CronJobAction\GetList::class)->handle($request->toQueryArray());
+        return $this->success(CronJobResponse::page($result), '获取成功');
     }
 
     public function info(): array
     {
         $id = (int) $this->request->route('id', 0);
         $result = container()->get(CronJobAction\GetInfo::class)->handle($id);
-        return $this->success($result, '获取成功');
+        return $this->success(CronJobResponse::detail($result), '获取成功');
     }
 
-    public function create(): array
+    public function create(CronJobRequest $request): array
     {
-        $data = $this->request->all();
-        $dto = CreateCronJobDto::fromArray($data);
-        $result = container()->get(CronJobAction\Create::class)->handle($dto);
-        return $this->success($result, '创建成功');
+        $result = container()->get(CronJobAction\Create::class)->handle($request);
+        return $this->success(CronJobResponse::saved($result), '创建成功');
     }
 
-    public function update(): array
+    public function update(CronJobRequest $request): array
     {
-        $data = $this->request->all();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $dto = UpdateCronJobDto::fromArray($data);
-        $result = container()->get(CronJobAction\Update::class)->handle($dto);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(CronJobAction\Update::class)->handle($request);
+        return $this->success(CronJobResponse::saved($result), '更新成功');
     }
 
     public function delete(): array
@@ -64,11 +60,13 @@ class CronJobController extends AbstractController
         return $this->success($result, '执行完成');
     }
 
-    public function batchUpdate(): array
+    public function batchUpdate(CronJobRequest $request): array
     {
-        $data = $this->request->all();
+        // ids 是业务字段（虚拟字段），toArray 才能拿到
+        $data = array_filter($request->toArray(), static fn ($v) => $v !== null);
         $ids = $data['ids'] ?? [];
-        unset($data['ids']);
+        unset($data['ids'], $data['id']);
+
         $result = container()->get(CronJobAction\BatchUpdate::class)->handle($ids, $data);
         return $this->success(['updated' => $result], '批量更新成功');
     }

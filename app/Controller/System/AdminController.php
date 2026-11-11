@@ -13,57 +13,51 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
-use App\Request\System\AdminRequest;
+use App\Dto\Admin\AdminRequest;
+use App\Dto\Admin\AdminResponse;
 use App\Service\Admin\Auth as AuthAction;
 use App\Service\Admin\Manage as ManageAction;
-use App\Service\Admin\Manage\Dto\CreateAdminDto;
-use App\Service\Admin\Manage\Dto\UpdateAdminDto;
 use App\Service\Admin\Permission as AdminPermAction;
 
 class AdminController extends AbstractController
 {
     public function list(AdminRequest $request): array
     {
-        $data = $request->validated();
-        $result = container()->get(ManageAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(ManageAction\GetList::class)->handle($request->toQueryArray());
+        return $this->success(AdminResponse::page($result), '获取成功');
     }
 
     public function create(AdminRequest $request): array
     {
-        $data = $request->validated();
-        $dto = CreateAdminDto::fromArray($data);
-        $result = container()->get(ManageAction\Create::class)->handle($dto);
-        return $this->success($result, '创建成功');
+        $result = container()->get(ManageAction\Create::class)->handle($request);
+        return $this->success(AdminResponse::saved($result), '创建成功');
     }
 
     public function update(AdminRequest $request): array
     {
-        $data = $request->validated();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $dto = UpdateAdminDto::fromArray($data);
-        $result = container()->get(ManageAction\Update::class)->handle($dto);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(ManageAction\Update::class)->handle($request);
+        return $this->success(AdminResponse::saved($result), '更新成功');
     }
 
-    public function delete(AdminRequest $request): array
+    public function delete(): array
     {
         $id = (int) $this->request->route('id', 0);
         container()->get(ManageAction\Delete::class)->handle(['id' => $id]);
         return $this->success(null, '删除成功');
     }
 
-    public function info(AdminRequest $request): array
+    public function info(): array
     {
         $id = (int) $this->request->route('id', 0);
         $result = container()->get(ManageAction\GetInfo::class)->handle($id);
-        return $this->success($result, '获取成功');
+        return $this->success(AdminResponse::detail($result), '获取成功');
     }
 
     public function resetPassword(AdminRequest $request): array
     {
-        $data = $request->validated();
-        container()->get(AuthAction\ResetPassword::class)->handle($data);
+        container()->get(AuthAction\ResetPassword::class)->handle($request->toArray());
         return $this->success(null, '密码重置成功');
     }
 
@@ -81,10 +75,9 @@ class AdminController extends AbstractController
         return $this->success(null, '解封成功');
     }
 
-    public function forceLogout(): array
+    public function forceLogout(AdminRequest $request): array
     {
-        $data = $this->request->all();
-        container()->get(ManageAction\ForceLogout::class)->handle($data);
+        container()->get(ManageAction\ForceLogout::class)->handle($request->toArray());
         return $this->success(null, '已强制下线');
     }
 
@@ -103,9 +96,8 @@ class AdminController extends AbstractController
 
     public function all(): array
     {
-        $data = $this->request->all();
-        $result = container()->get(ManageAction\GetAllAdmins::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(ManageAction\GetAllAdmins::class)->handle($this->request->all());
+        return $this->success(AdminResponse::collection($result), '获取成功');
     }
 
     public function kick(): array
@@ -136,17 +128,15 @@ class AdminController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function assignRoles(): array
+    public function assignRoles(AdminRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(AdminPermAction\AssignRoles::class)->handle($data);
+        $result = container()->get(AdminPermAction\AssignRoles::class)->handle($request->toArray());
         return $this->success($result, '分配成功');
     }
 
-    public function revokeRole(): array
+    public function revokeRole(AdminRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(AdminPermAction\RevokeRole::class)->handle($data);
+        $result = container()->get(AdminPermAction\RevokeRole::class)->handle($request->toArray());
         return $this->success($result, '移除成功');
     }
 }
