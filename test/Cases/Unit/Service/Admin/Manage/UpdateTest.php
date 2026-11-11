@@ -47,7 +47,7 @@ class UpdateTest extends TestCase
     {
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->byDefault()->andReturn(true);
 
         $result = $this->buildAction($model)->handle($this->dto(['username' => 'new_name']));
@@ -65,7 +65,7 @@ class UpdateTest extends TestCase
         });
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $this->buildAction($model)->handle($this->dto(['name' => 'NewName']));
@@ -83,7 +83,7 @@ class UpdateTest extends TestCase
         })->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $this->buildAction($model)->handle($this->dto(['password' => 'new_pw_123']));
@@ -102,7 +102,7 @@ class UpdateTest extends TestCase
         })->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $this->buildAction($model)->handle($this->dto(['name' => 'Bob']));
@@ -114,7 +114,7 @@ class UpdateTest extends TestCase
     {
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $assignCalled = false;
@@ -134,7 +134,9 @@ class UpdateTest extends TestCase
     public function testUpdateFailsWhenAdminNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -146,7 +148,7 @@ class UpdateTest extends TestCase
     {
         $admin = $this->fakeAdmin(['username' => 'old_name']);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->with(['username' => 'taken_name'], 2)->andReturn(false);
 
         $this->expectException(BusinessException::class);
@@ -159,7 +161,7 @@ class UpdateTest extends TestCase
     {
         $admin = $this->fakeAdmin(['email' => 'old@test.com']);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')
             ->with(['username' => Mockery::any()], Mockery::any())->andReturn(true);
         $model->shouldReceive('isFieldUnique')
@@ -179,7 +181,7 @@ class UpdateTest extends TestCase
 
         $admin = $this->fakeAdmin(['id' => 10]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(403);
@@ -194,7 +196,7 @@ class UpdateTest extends TestCase
 
         $admin = $this->fakeAdmin(['id' => 5]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $result = $this->buildAction($model)->handle(AdminRequest::fromArray(['id' => 5, 'name' => 'myname']));
@@ -208,7 +210,7 @@ class UpdateTest extends TestCase
 
         $admin = $this->fakeAdmin(['id' => 5]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(403);
@@ -221,7 +223,7 @@ class UpdateTest extends TestCase
     {
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $result = $this->buildAction($model)->handle($this->dto(['is_admin' => 1]));
@@ -241,7 +243,7 @@ class UpdateTest extends TestCase
         })->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $this->buildAction($model)->handle($this->dto(['name' => 'x', 'role_ids' => [1]]));

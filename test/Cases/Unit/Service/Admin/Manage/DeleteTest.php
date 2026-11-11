@@ -22,7 +22,6 @@ use Hyperf\Database\Model\Builder;
 use Hyperf\Testing\TestCase;
 use Mockery;
 use Mockery\MockInterface;
-use stdClass;
 
 /**
  * @internal
@@ -49,7 +48,7 @@ class DeleteTest extends TestCase
     {
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         $result = $this->buildAction($model)->handle(['id' => 10]);
 
@@ -66,7 +65,7 @@ class DeleteTest extends TestCase
         });
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         $this->buildAction($model)->handle(['id' => 10]);
 
@@ -77,24 +76,34 @@ class DeleteTest extends TestCase
 
     public function testDeleteFailsWithZeroId(): void
     {
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(['id' => 0]);
+        $this->buildAction($model)->handle(['id' => 0]);
     }
 
     public function testDeleteFailsWithMissingId(): void
     {
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle([]);
+        $this->buildAction($model)->handle([]);
     }
 
     public function testDeleteFailsWhenAdminNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -106,7 +115,7 @@ class DeleteTest extends TestCase
     {
         $admin = $this->fakeAdmin(['is_admin' => 1]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(403);
@@ -120,7 +129,7 @@ class DeleteTest extends TestCase
         $admin = $this->fakeAdmin(['is_admin' => 1]);
         $admin->shouldNotReceive('delete');
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         try {
             $this->buildAction($model)->handle(['id' => 10]);
@@ -136,7 +145,7 @@ class DeleteTest extends TestCase
     {
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         $roleDel = false;
         $roleBuilder = Mockery::mock(Builder::class);
@@ -160,7 +169,7 @@ class DeleteTest extends TestCase
     {
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         $roleModel = Mockery::mock(SysAdminRoleModel::class);
         $this->mockDeleteChain($roleModel, 'admin_code');
@@ -188,10 +197,17 @@ class DeleteTest extends TestCase
         ];
         $attrs = array_merge($defaults, $overrides);
 
-        $admin = Mockery::mock(stdClass::class);
-        foreach ($attrs as $k => $v) {
-            $admin->{$k} = $v;
-        }
+        $admin = Mockery::mock(SysAdminModel::class);
+        $admin->shouldReceive('setAttribute')->andReturnUsing(
+            function (string $key, mixed $value) use (&$attrs): void {
+                $attrs[$key] = $value;
+            }
+        );
+        $admin->shouldReceive('getAttribute')->andReturnUsing(
+            function (string $key) use (&$attrs) {
+                return $attrs[$key] ?? null;
+            }
+        );
         $admin->shouldReceive('delete')->byDefault()->andReturn(true);
         $admin->shouldReceive('toArray')->byDefault()->andReturn($attrs);
         return $admin;

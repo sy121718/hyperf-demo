@@ -23,13 +23,7 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        requireId($id, '管理员');
-
-        $admin = $this->adminModel
-            ->with(['roles', 'sessions'])
-            ->find($id);
-
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($id, '管理员', ['roles', 'sessions']);
 
         return $admin->toArray();
     }

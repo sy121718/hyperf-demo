@@ -116,7 +116,7 @@ class PermissionTest extends TestCase
         ]);
 
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($perm);
+        $model->shouldReceive('findOrNotFound')->with(1, '权限')->andReturn($perm);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
 
         $result = (new Update($model))->handle(
@@ -129,7 +129,8 @@ class PermissionTest extends TestCase
     public function testUpdatePermissionNotFound(): void
     {
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '权限不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -145,7 +146,7 @@ class PermissionTest extends TestCase
         });
 
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($perm);
+        $model->shouldReceive('findOrNotFound')->with(1, '权限')->andReturn($perm);
         $model->shouldReceive('isFieldUnique')->with(['perm_code' => 'taken'], 1)->andReturn(false);
 
         $this->expectException(BusinessException::class);
@@ -158,10 +159,10 @@ class PermissionTest extends TestCase
 
     public function testDeletePermissionSuccess(): void
     {
-        $perm = Mockery::mock(stdClass::class);
+        $perm = Mockery::mock(SysPermissionDictModel::class);
 
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($perm);
+        $model->shouldReceive('findOrNotFound')->with(5, '权限')->andReturn($perm);
         $model->shouldReceive('where->pluck->toArray')->andReturn([]);
         $model->shouldReceive('whereIn->delete')->andReturn(1);
 
@@ -171,7 +172,8 @@ class PermissionTest extends TestCase
     public function testDeletePermissionNotFound(): void
     {
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '权限不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -182,6 +184,8 @@ class PermissionTest extends TestCase
     public function testDeletePermissionZeroId(): void
     {
         $model = Mockery::mock(SysPermissionDictModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '权限ID不能为空'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('权限ID不能为空');
@@ -193,11 +197,11 @@ class PermissionTest extends TestCase
 
     public function testGetInfoSuccess(): void
     {
-        $perm = Mockery::mock(stdClass::class);
+        $perm = Mockery::mock(SysPermissionDictModel::class);
         $perm->shouldReceive('toArray')->andReturn(['id' => 1, 'perm_code' => 'test']);
 
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($perm);
+        $model->shouldReceive('findOrNotFound')->with(1, '权限')->andReturn($perm);
 
         $result = (new GetInfo($model))->handle(1);
 
@@ -207,7 +211,8 @@ class PermissionTest extends TestCase
     public function testGetInfoNotFound(): void
     {
         $model = Mockery::mock(SysPermissionDictModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '权限不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -218,6 +223,8 @@ class PermissionTest extends TestCase
     public function testGetInfoZeroId(): void
     {
         $model = Mockery::mock(SysPermissionDictModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '权限ID不能为空'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('权限ID不能为空');

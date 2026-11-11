@@ -23,10 +23,7 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        requireId($id, '权限');
-
-        $permission = $this->permissionModel->find($id);
-        ! $permission && notFound('权限');
+        $permission = $this->permissionModel->findOrNotFound($id, '权限');
 
         return $permission->toArray();
     }

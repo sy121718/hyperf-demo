@@ -25,10 +25,7 @@ class KickUser
 
     public function handle(int $userId): void
     {
-        requireId($userId, '用户');
-
-        $admin = $this->adminModel->find($userId);
-        ! $admin && notFound('用户');
+        $admin = $this->adminModel->findOrNotFound($userId, '用户');
 
         $this->sessionsModel
             ->where('admin_id', $userId)

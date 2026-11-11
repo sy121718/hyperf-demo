@@ -83,7 +83,7 @@ class NoticeTest extends TestCase
         })->andReturn(true);
 
         $model = Mockery::mock(NoticeModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($notice);
+        $model->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
 
         (new Update($model))->handle(
             NoticeRequest::fromArray(['id' => 1, 'title' => '新标题', 'is_top' => 1])
@@ -105,7 +105,7 @@ class NoticeTest extends TestCase
         })->andReturn(true);
 
         $model = Mockery::mock(NoticeModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($notice);
+        $model->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
 
         (new Update($model))->handle(
             NoticeRequest::fromArray(['id' => 1, 'title' => '想改标题', 'is_popup' => 1])
@@ -119,7 +119,8 @@ class NoticeTest extends TestCase
     public function testUpdateNotFound(): void
     {
         $model = Mockery::mock(NoticeModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '通知不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -206,7 +207,8 @@ class NoticeTest extends TestCase
     public function testSetTargetsNoticeNotFound(): void
     {
         $noticeModel = Mockery::mock(NoticeModel::class);
-        $noticeModel->shouldReceive('find')->with(999)->andReturn(null);
+        $noticeModel->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '通知不存在'));
 
         $targetModel = Mockery::mock(NoticeTargetModel::class);
 
@@ -221,7 +223,7 @@ class NoticeTest extends TestCase
         $notice = Mockery::mock(NoticeModel::class)->makePartial();
 
         $noticeModel = Mockery::mock(NoticeModel::class);
-        $noticeModel->shouldReceive('find')->with(1)->andReturn($notice);
+        $noticeModel->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
 
         $targetModel = Mockery::mock(NoticeTargetModel::class);
         $targetModel->shouldReceive('where->delete')->once();
@@ -236,7 +238,7 @@ class NoticeTest extends TestCase
         $notice = Mockery::mock(NoticeModel::class)->makePartial();
 
         $noticeModel = Mockery::mock(NoticeModel::class);
-        $noticeModel->shouldReceive('find')->with(1)->andReturn($notice);
+        $noticeModel->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
 
         $targetModel = Mockery::mock(NoticeTargetModel::class);
         $targetModel->shouldReceive('where->delete')->once();

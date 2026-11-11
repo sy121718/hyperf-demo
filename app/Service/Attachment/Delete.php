@@ -23,8 +23,7 @@ class Delete
 
     public function handle(int $id): bool
     {
-        $attachment = $this->attachmentModel->find($id);
-        ! $attachment && notFound('附件');
+        $attachment = $this->attachmentModel->findOrNotFound($id, '附件');
 
         $attachment->delete();
 

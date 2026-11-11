@@ -26,10 +26,7 @@ class Kickout
 
     public function handle(int $id): bool
     {
-        requireId($id, '会话');
-
-        $session = $this->sessionModel->find($id);
-        ! $session && notFound('会话');
+        $session = $this->sessionModel->findOrNotFound($id, '会话');
 
         if ($session->status !== 1) {
             return true;

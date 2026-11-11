@@ -34,11 +34,9 @@ class ResetPassword
         $adminId = (int) ($data['admin_id'] ?? 0);
         $newPassword = $data['new_password'] ?? '';
 
-        requireId($adminId, '管理员');
         ! empty($newPassword) || paramError('新密码不能为空');
 
-        $admin = $this->adminModel->find($adminId);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($adminId, '管理员');
 
         if ($admin->is_admin == 1 && ! $isSuperAdmin) {
             paramError('无权重置超级管理员密码', 403);

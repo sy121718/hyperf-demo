@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Dict;
 
 use App\Common\CacheKeys;
+use App\Dto\Dict\DictRequest;
 use App\Model\System\SysDictModel;
 use Psr\SimpleCache\CacheInterface;
 
@@ -24,11 +25,10 @@ class GetTreeList
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(DictRequest $request): array
     {
-        $search = $data['search'] ?? null;
-        $dictType = $data['dict_type'] ?? null;
-        $hasFilter = $search || $dictType !== null || ! empty($data['status']);
+        // 带筛选条件时不走缓存，否则会把裁剪后的结果写回全量缓存
+        $hasFilter = $request->search !== null || $request->dict_type !== null || $request->status !== null;
 
         if (! $hasFilter) {
             $cached = $this->cache->get(CacheKeys::DICT_TREE);
@@ -38,28 +38,17 @@ class GetTreeList
         }
 
         $dicts = $this->dictModel
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny($this->dictModel->getSearchableFields(), 'like', "%{$search}%"))
-            ->when($dictType !== null, fn ($q) => $q->where('dict_type', $dictType))
-            ->with(['items' => fn ($q) => $q->where('status', 1)->orderBy('sort_order')->orderBy('id')])
-            ->sort($data)
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny(
+                $this->dictModel->getSearchableFields(),
+                'like',
+                "%{$request->search}%"
+            ))
+            ->sort($request->toQueryArray())
+            ->with(['items' => fn ($q) => $q->where('status', 1)])
             ->get();
 
-        $result = $dicts->map(fn ($dict) => [
-            'id' => $dict->id,
-            'dict_name' => $dict->dict_name,
-            'dict_code' => $dict->dict_code,
-            'dict_type' => $dict->dict_type ?? 'default',
-            'status' => $dict->status,
-            'create_time' => $dict->create_time,
-            'items' => $dict->items->map(fn ($item) => [
-                'id' => $item->id,
-                'item_label' => $item->item_label,
-                'item_value' => $item->item_value,
-                'sort_order' => $item->sort_order,
-                'status' => $item->status,
-            ])->toArray(),
-        ])->toArray();
+        $result = $dicts->toArray();
 
         if (! $hasFilter) {
             $this->cache->set(CacheKeys::DICT_TREE, $result, CacheKeys::TTL_MEDIUM);

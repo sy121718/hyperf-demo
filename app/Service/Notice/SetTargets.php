@@ -29,8 +29,7 @@ class SetTargets
         $targetType = (int) ($data['target_type'] ?? 0);
         $targetIds = $data['target_ids'] ?? [];
 
-        $notice = $this->noticeModel->find($noticeId);
-        ! $notice && notFound('通知');
+        $notice = $this->noticeModel->findOrNotFound($noticeId, '通知');
 
         $this->targetModel->where('notice_id', $noticeId)->delete();
 

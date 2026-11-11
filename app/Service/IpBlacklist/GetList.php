@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\IpBlacklist;
 
+use App\Dto\IpBlacklist\IpBlacklistRequest;
 use App\Model\System\IpBlacklistModel;
 
 class GetList
@@ -21,28 +22,15 @@ class GetList
     ) {
     }
 
-    public function handle(array $data): mixed
+    public function handle(IpBlacklistRequest $request): mixed
     {
-        $withDetail = ($data['with'] ?? '') === 'detail';
-
-        // 列表页只查必要字段
-        $fields = $withDetail ? ['*'] : [
-            'id', 'ip_address', 'error_type', 'status', 'banned_time', 'create_time',
-        ];
-
-        $query = $this->model
-            ->when($data['ip_address'] ?? null, fn ($q, $v) => $q->where('ip_address', 'like', "%{$v}%"))
-            ->when(isset($data['error_type']), fn ($q) => $q->where('error_type', $data['error_type']))
-            ->when(isset($data['status']), fn ($q) => $q->where('status', (int) $data['status']))
-            ->when($data['start_date'] ?? null, fn ($q, $v) => $q->where('banned_time', '>=', $v))
-            ->when($data['end_date'] ?? null, fn ($q, $v) => $q->where('banned_time', '<=', $v))
-            ->orderByDesc('banned_time');
-
-        // 条件加载关联
-        if ($withDetail) {
-            $query->with(['operator:id,username']);
-        }
-
-        return $query->paginate((int) ($data['limit'] ?? 20), $fields, 'page', (int) ($data['page'] ?? 1));
+        return $this->model
+            ->when($request->ip_address, fn ($q, $v) => $q->where('ip_address', 'like', "%{$v}%"))
+            ->when($request->error_type !== null, fn ($q) => $q->where('error_type', $request->error_type))
+            ->when($request->status !== null, fn ($q) => $q->where('status', $request->status))
+            ->when($request->start_date, fn ($q, $v) => $q->where('banned_time', '>=', $v))
+            ->when($request->end_date, fn ($q, $v) => $q->where('banned_time', '<=', $v))
+            ->orderByDesc('banned_time')
+            ->paginate($request->pageSize(), ['*'], 'page', $request->pageNumber());
     }
 }

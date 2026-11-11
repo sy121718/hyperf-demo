@@ -25,8 +25,7 @@ class Update
     public function handle(RoleRequest $request): array
     {
         $id = (int) $request->id;
-        $role = $this->roleModel->find($id);
-        ! $role && notFound('角色');
+        $role = $this->roleModel->findOrNotFound($id, '角色');
 
         if ($request->role_code && $request->role_code !== $role->role_code) {
             ! $this->roleModel->isFieldUnique(['role_code' => $request->role_code], $id)

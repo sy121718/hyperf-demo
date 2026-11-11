@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Ops\Session;
 
 use App\Common\CacheKeys;
+use App\Dto\Session\SessionRequest;
 use App\Model\Admin\SysAdminSessionsModel;
 use Psr\SimpleCache\CacheInterface;
 
@@ -24,12 +25,9 @@ class BatchKickout
     ) {
     }
 
-    public function handle(array $data): int
+    public function handle(SessionRequest $request): int
     {
-        $ids = $data['ids'] ?? [];
-        empty($ids) && paramError('会话ID不能为空');
-
-        $sessions = $this->sessionModel->whereIn('id', $ids)->get();
+        $sessions = $this->sessionModel->whereIn('id', $request->ids ?? [])->get();
         $count = 0;
 
         foreach ($sessions as $session) {

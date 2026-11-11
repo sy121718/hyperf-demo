@@ -26,8 +26,7 @@ class Unban
     {
         requireId($id, '记录');
 
-        $record = $this->model->find($id);
-        ! $record && notFound('拉黑记录');
+        $record = $this->model->findOrNotFound($id, '拉黑记录');
 
         $record->status !== IpBlacklistModel::STATUS_ACTIVE
             && paramError('该记录已失效或已被解除');

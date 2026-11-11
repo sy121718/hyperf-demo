@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Dict;
 
+use App\Dto\Dict\DictRequest;
 use App\Exception\BusinessException;
 use App\Model\System\SysDictModel;
 use App\Service\Dict\Create;
@@ -19,7 +20,6 @@ use App\Service\Dict\Delete;
 use App\Service\Dict\GetInfo;
 use App\Service\Dict\Update;
 use Hyperf\Context\Context;
-use Hyperf\Database\Model\Builder;
 use Hyperf\Testing\TestCase;
 use Mockery;
 use stdClass;
@@ -46,15 +46,15 @@ class DictTest extends TestCase
     public function testCreateSuccess(): void
     {
         $dict = Mockery::mock(stdClass::class);
-        $dict->id = 1;
+        $dict->shouldReceive('toArray')->andReturn(['id' => 1, 'dict_code' => 'gender']);
 
         $model = Mockery::mock(SysDictModel::class);
         $model->shouldReceive('where->exists')->andReturn(false);
         $model->shouldReceive('create')->once()->andReturn($dict);
 
-        $result = (new Create($model))->handle([
+        $result = (new Create($model))->handle(DictRequest::fromArray([
             'dict_name' => '性别', 'dict_code' => 'gender',
-        ]);
+        ]));
 
         $this->assertSame(1, $result['id']);
         $this->assertSame('gender', $result['dict_code']);
@@ -68,17 +68,27 @@ class DictTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('字典编码已存在');
 
-        (new Create($model))->handle(['dict_name' => 'x', 'dict_code' => 'dup']);
+        (new Create($model))->handle(DictRequest::fromArray(['dict_name' => 'x', 'dict_code' => 'dup']));
     }
 
-    public function testCreateEmptyName(): void
+    public function testCreateFallsBackToDefaults(): void
     {
+        // 未提交 dict_type / status 时补齐默认值
+        $dict = Mockery::mock(stdClass::class);
+        $dict->shouldReceive('toArray')->andReturn(['id' => 1]);
+
         $model = Mockery::mock(SysDictModel::class);
+        $model->shouldReceive('where->exists')->andReturn(false);
+        $model->shouldReceive('create')->once()->with([
+            'dict_name' => '性别',
+            'dict_code' => 'gender',
+            'dict_type' => 'default',
+            'status' => 1,
+        ])->andReturn($dict);
 
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('字典名称不能为空');
-
-        (new Create($model))->handle(['dict_name' => '', 'dict_code' => 'x']);
+        (new Create($model))->handle(DictRequest::fromArray([
+            'dict_name' => '性别', 'dict_code' => 'gender',
+        ]));
     }
 
     public function testUpdateSuccess(): void
@@ -90,10 +100,10 @@ class DictTest extends TestCase
         $dict->shouldReceive('fresh->toArray')->andReturn(['id' => 1, 'dict_code' => 'new']);
 
         $model = Mockery::mock(SysDictModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($dict);
+        $model->shouldReceive('findOrNotFound')->with(1, '字典')->andReturn($dict);
         $model->shouldReceive('where->where->exists')->andReturn(false);
 
-        $result = (new Update($model))->handle(1, ['dict_code' => 'new']);
+        $result = (new Update($model))->handle(DictRequest::fromArray(['id' => 1, 'dict_code' => 'new']));
 
         $this->assertSame('new', $result['dict_code']);
     }
@@ -101,21 +111,22 @@ class DictTest extends TestCase
     public function testUpdateNotFound(): void
     {
         $model = Mockery::mock(SysDictModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '字典不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new Update($model))->handle(999, ['dict_name' => 'x']);
+        (new Update($model))->handle(DictRequest::fromArray(['id' => 999, 'dict_name' => 'x']));
     }
 
     public function testDeleteSuccess(): void
     {
-        $dict = Mockery::mock(stdClass::class);
+        $dict = Mockery::mock(SysDictModel::class);
         $dict->shouldReceive('delete')->once()->andReturn(true);
 
         $model = Mockery::mock(SysDictModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($dict);
+        $model->shouldReceive('findOrNotFound')->with(1, '字典')->andReturn($dict);
 
         $result = (new Delete($model))->handle(1);
 
@@ -125,7 +136,8 @@ class DictTest extends TestCase
     public function testDeleteNotFound(): void
     {
         $model = Mockery::mock(SysDictModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '字典不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -136,6 +148,8 @@ class DictTest extends TestCase
     public function testDeleteZeroId(): void
     {
         $model = Mockery::mock(SysDictModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '字典ID不能为空'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('字典ID不能为空');
@@ -145,11 +159,9 @@ class DictTest extends TestCase
 
     public function testGetInfoNotFound(): void
     {
-        $builder = Mockery::mock(Builder::class);
-        $builder->shouldReceive('find')->andReturn(null);
-
         $model = Mockery::mock(SysDictModel::class);
-        $model->shouldReceive('with')->andReturn($builder);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '字典不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -160,6 +172,8 @@ class DictTest extends TestCase
     public function testGetInfoZeroId(): void
     {
         $model = Mockery::mock(SysDictModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '字典ID不能为空'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('字典ID不能为空');

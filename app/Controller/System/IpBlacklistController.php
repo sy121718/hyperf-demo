@@ -13,42 +13,37 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\IpBlacklist\IpBlacklistRequest;
+use App\Dto\IpBlacklist\IpBlacklistResponse;
 use App\Service\IpBlacklist as IpAction;
 
 class IpBlacklistController extends AbstractController
 {
-    public function list(): array
+    public function list(IpBlacklistRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(IpAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(IpAction\GetList::class)->handle($request);
+        return $this->success(IpBlacklistResponse::page($result), '获取成功');
     }
 
-    public function ban(): array
+    public function ban(IpBlacklistRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(IpAction\Ban::class)->handle($data);
-        return $this->success($result, '拉黑成功');
+        $result = container()->get(IpAction\Ban::class)->handle($request);
+        return $this->success(IpBlacklistResponse::saved($result), '拉黑成功');
     }
 
-    public function unban(): array
+    public function unban(IpBlacklistRequest $request): array
     {
-        $data = $this->request->all();
-        $id = (int) ($data['id'] ?? 0);
-        $result = container()->get(IpAction\Unban::class)->handle($id);
-        return $this->success($result, '解除拉黑成功');
+        $result = container()->get(IpAction\Unban::class)->handle((int) $request->id);
+        return $this->success(IpBlacklistResponse::saved($result), '解除拉黑成功');
     }
 
-    public function check(): array
+    public function check(IpBlacklistRequest $request): array
     {
-        $data = $this->request->all();
-        $ip = $data['ip_address'] ?? '';
-        $result = container()->get(IpAction\CheckIp::class)->handle($ip);
+        $result = container()->get(IpAction\CheckIp::class)->handle((string) $request->ip_address);
 
-        if (! $result) {
-            return $this->success(['is_banned' => false, 'ban_info' => null], 'IP未被拉黑');
-        }
-
-        return $this->success(['is_banned' => true, 'ban_info' => $result], 'IP已被拉黑');
+        return $this->success([
+            'is_banned' => $result !== null,
+            'ban_info' => $result ? IpBlacklistResponse::detail($result) : null,
+        ], $result ? 'IP已被拉黑' : 'IP未被拉黑');
     }
 }

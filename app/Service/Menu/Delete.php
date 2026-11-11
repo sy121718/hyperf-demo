@@ -27,10 +27,7 @@ class Delete
     public function handle(array $data): bool
     {
         $id = (int) ($data['id'] ?? 0);
-        requireId($id, '菜单');
-
-        $menu = $this->menuModel->find($id);
-        ! $menu && notFound('菜单');
+        $menu = $this->menuModel->findOrNotFound($id, '菜单');
 
         Db::beginTransaction();
         try {

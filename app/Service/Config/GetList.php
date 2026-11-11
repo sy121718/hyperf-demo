@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Config;
 
+use App\Dto\Config\ConfigRequest;
 use App\Model\System\SysConfigModel;
 
 class GetList
@@ -21,20 +22,16 @@ class GetList
     ) {
     }
 
-    public function handle(array $data): mixed
+    public function handle(ConfigRequest $request): mixed
     {
-        $search = $data['search'] ?? null;
-        $withDetail = ($data['with'] ?? '') === 'detail';
-
-        // 列表页只查必要字段
-        $fields = $withDetail ? ['*'] : [
-            'id', 'group_key', 'group_name', 'config_data', 'remark', 'status', 'create_time',
-        ];
-
         return $this->configModel
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny($this->configModel->getSearchableFields(), 'like', "%{$search}%"))
-            ->sort($data)
-            ->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny(
+                $this->configModel->getSearchableFields(),
+                'like',
+                "%{$request->search}%"
+            ))
+            ->sort($request->toQueryArray())
+            ->paginate($request->pageSize(), ['*'], 'page', $request->pageNumber());
     }
 }

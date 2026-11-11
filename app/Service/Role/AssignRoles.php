@@ -35,8 +35,7 @@ class AssignRoles
 
     public function handle(int $adminId, array $roleIds): void
     {
-        $admin = $this->adminModel->find($adminId);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($adminId, '管理员');
 
         $adminCode = (string) $admin->admin_code;
 

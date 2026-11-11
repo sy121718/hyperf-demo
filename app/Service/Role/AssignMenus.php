@@ -28,8 +28,7 @@ class AssignMenus
     {
         ! empty($roleCode) || paramError('角色标识不能为空');
 
-        $role = $this->roleModel->where('role_code', $roleCode)->first();
-        ! $role && notFound('角色');
+        $role = $this->roleModel->firstOrNotFound(['role_code' => $roleCode], '角色');
 
         // 获取菜单的 permission_code（目录类型没有 permission_code）
         $permissionCodes = [];

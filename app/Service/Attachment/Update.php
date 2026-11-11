@@ -26,8 +26,7 @@ class Update
     public function handle(AttachmentRequest $request): array
     {
         $id = (int) $request->id;
-        $attachment = $this->attachmentModel->find($id);
-        ! $attachment && notFound('附件');
+        $attachment = $this->attachmentModel->findOrNotFound($id, '附件');
 
         if ($request->category_id !== null && $request->category_id > 0) {
             ! SysFileCategoryModel::where('id', $request->category_id)->exists()

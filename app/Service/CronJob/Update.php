@@ -25,8 +25,7 @@ class Update
     public function handle(CronJobRequest $request): array
     {
         $id = (int) $request->id;
-        $job = $this->cronJobModel->find($id);
-        ! $job && notFound('任务');
+        $job = $this->cronJobModel->findOrNotFound($id, '任务');
 
         $job->update($request->toDbArrayFiltered());
 

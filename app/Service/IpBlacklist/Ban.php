@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\IpBlacklist;
 
 use App\Common\CacheKeys;
+use App\Dto\IpBlacklist\IpBlacklistRequest;
 use App\Model\System\IpBlacklistModel;
 use Carbon\Carbon;
 
@@ -23,22 +24,17 @@ class Ban
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(IpBlacklistRequest $request): array
     {
-        $ipAddress = $data['ip_address'] ?? '';
-        $errorType = $data['error_type'] ?? 'other';
-        $banDuration = (int) ($data['ban_duration'] ?? 30);
-
-        empty($ipAddress) && paramError('IP地址不能为空');
+        $ipAddress = (string) $request->ip_address;
+        $banDuration = (int) ($request->ban_duration ?? 30);
 
         $existingBan = $this->model->activeForIp($ipAddress)->first();
 
+        // 重复拉黑：在原到期时间上顺延，并累加次数
         if ($existingBan) {
-            $currentUntil = Carbon::parse($existingBan->banned_until_time);
-            $newUntil = $currentUntil->addMinutes($banDuration);
-
             $existingBan->update([
-                'banned_until_time' => $newUntil,
+                'banned_until_time' => Carbon::parse($existingBan->banned_until_time)->addMinutes($banDuration),
                 'ban_count' => $existingBan->ban_count + 1,
             ]);
 
@@ -48,20 +44,17 @@ class Ban
         }
 
         $bannedTime = Carbon::now();
-        $bannedUntil = $bannedTime->copy()->addMinutes($banDuration);
 
-        $record = $this->model->create([
-            'ip_address' => $ipAddress,
-            'error_type' => $errorType,
-            'ban_reason' => $data['ban_reason'] ?? null,
-            'ban_duration' => $banDuration,
-            'banned_time' => $bannedTime,
-            'banned_until_time' => $bannedUntil,
-            'ban_count' => 1,
-            'operator_id' => $data['operator_id'] ?? currentUser('id'),
-            'remark' => $data['remark'] ?? null,
-            'status' => IpBlacklistModel::STATUS_ACTIVE,
-        ]);
+        $dbData = $request->toDbArrayFiltered();
+        $dbData['error_type'] ??= 'other';
+        $dbData['ban_duration'] = $banDuration;
+        $dbData['banned_time'] = $bannedTime;
+        $dbData['banned_until_time'] = $bannedTime->copy()->addMinutes($banDuration);
+        $dbData['ban_count'] = 1;
+        $dbData['operator_id'] = currentUser('id');
+        $dbData['status'] = IpBlacklistModel::STATUS_ACTIVE;
+
+        $record = $this->model->create($dbData);
 
         CacheKeys::delete(CacheKeys::ipBlacklist($ipAddress));
 

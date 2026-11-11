@@ -23,11 +23,7 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        requireId($id, '菜单');
-
-        $menu = $this->menuModel->find($id);
-
-        ! $menu && notFound('菜单');
+        $menu = $this->menuModel->findOrNotFound($id, '菜单');
 
         return $menu->toArray();
     }

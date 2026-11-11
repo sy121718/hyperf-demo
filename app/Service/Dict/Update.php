@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Dict;
 
 use App\Common\CacheKeys;
+use App\Dto\Dict\DictRequest;
 use App\Model\System\SysDictModel;
 
 class Update
@@ -22,27 +23,18 @@ class Update
     ) {
     }
 
-    public function handle(int $id, array $data): array
+    public function handle(DictRequest $request): array
     {
-        requireId($id, '字典');
+        $id = (int) $request->id;
+        $dict = $this->dictModel->findOrNotFound($id, '字典');
 
-        $dict = $this->dictModel->find($id);
-        ! $dict && notFound('字典');
-
-        if (! empty($data['dict_code']) && $data['dict_code'] !== $dict->dict_code) {
-            $this->dictModel->where('dict_code', $data['dict_code'])
+        if ($request->dict_code !== null && $request->dict_code !== $dict->dict_code) {
+            $this->dictModel->where('dict_code', $request->dict_code)
                 ->where('id', '!=', $id)->exists()
                 && paramError('字典编码已存在');
         }
 
-        $updateData = array_filter([
-            'dict_name' => $data['dict_name'] ?? null,
-            'dict_code' => $data['dict_code'] ?? null,
-            'dict_type' => $data['dict_type'] ?? null,
-            'status' => $data['status'] ?? null,
-        ], fn ($v) => $v !== null);
-
-        $dict->update($updateData);
+        $dict->update($request->toDbArrayFiltered());
 
         CacheKeys::flush(CacheKeys::DICT_TREE, CacheKeys::dictItems($id));
 

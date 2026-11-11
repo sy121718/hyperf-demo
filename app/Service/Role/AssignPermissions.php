@@ -28,8 +28,7 @@ class AssignPermissions
     {
         ! empty($roleCode) || paramError('角色标识不能为空');
 
-        $role = $this->roleModel->where('role_code', $roleCode)->first();
-        ! $role && notFound('角色');
+        $role = $this->roleModel->firstOrNotFound(['role_code' => $roleCode], '角色');
 
         if (! empty($permissionCodes)) {
             $exists = $this->permissionModel

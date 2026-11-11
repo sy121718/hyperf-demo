@@ -90,7 +90,7 @@ class CronJobTest extends TestCase
         ]);
 
         $model = Mockery::mock(SysCronJobModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($job);
+        $model->shouldReceive('findOrNotFound')->with(1, '任务')->andReturn($job);
 
         $result = (new GetInfo($model))->handle(1);
 
@@ -100,7 +100,8 @@ class CronJobTest extends TestCase
     public function testGetInfoNotFound(): void
     {
         $model = Mockery::mock(SysCronJobModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '任务不存在'));
 
         $this->expectException(BusinessException::class);
         (new GetInfo($model))->handle(999);
@@ -118,7 +119,7 @@ class CronJobTest extends TestCase
         ]);
 
         $model = Mockery::mock(SysCronJobModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($job);
+        $model->shouldReceive('findOrNotFound')->with(1, '任务')->andReturn($job);
 
         $result = (new Update($model))->handle($request);
 
@@ -130,7 +131,8 @@ class CronJobTest extends TestCase
         $request = CronJobRequest::fromArray(['id' => 999, 'job_name' => 'x']);
 
         $model = Mockery::mock(SysCronJobModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '任务不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -143,7 +145,7 @@ class CronJobTest extends TestCase
         $job->shouldReceive('delete')->once()->andReturn(true);
 
         $model = Mockery::mock(SysCronJobModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($job);
+        $model->shouldReceive('findOrNotFound')->with(1, '任务')->andReturn($job);
 
         $this->assertTrue((new Delete($model))->handle(1));
     }
@@ -151,7 +153,8 @@ class CronJobTest extends TestCase
     public function testDeleteNotFound(): void
     {
         $model = Mockery::mock(SysCronJobModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '任务不存在'));
 
         $this->expectException(BusinessException::class);
         (new Delete($model))->handle(999);

@@ -27,10 +27,7 @@ class Delete
     public function handle(array $data): bool
     {
         $id = (int) ($data['id'] ?? 0);
-        requireId($id, '权限');
-
-        $permission = $this->permissionModel->find($id);
-        ! $permission && notFound('权限');
+        $permission = $this->permissionModel->findOrNotFound($id, '权限');
 
         Db::beginTransaction();
         try {

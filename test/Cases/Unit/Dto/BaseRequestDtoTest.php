@@ -153,4 +153,17 @@ class BaseRequestDtoTest extends TestCase
 
         $this->assertTrue($dto->authorize());
     }
+
+    public function testDataDoesNotLeakBetweenInstances(): void
+    {
+        // DTO 由容器单例持有，数据必须落在协程上下文里，
+        // 否则上一个请求的字段会残留在下一个请求上
+        $first = RoleRequest::fromArray(['role_code' => 'ops', 'page' => 2]);
+        $this->assertSame('ops', $first->role_code);
+
+        $second = RoleRequest::fromArray(['role_name' => '运维']);
+
+        $this->assertNull($second->role_code);
+        $this->assertSame(1, $second->pageNumber());
+    }
 }

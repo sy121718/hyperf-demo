@@ -51,7 +51,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget(['id' => 10]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 10, 'new_password' => 'new123']);
 
@@ -64,7 +64,7 @@ class ResetPasswordTest extends TestCase
 
         $target = $this->fakeTarget(['id' => 1, 'is_admin' => 1]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(1, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 1, 'new_password' => 'suNew!']);
 
@@ -77,7 +77,7 @@ class ResetPasswordTest extends TestCase
 
         $target = $this->fakeTarget(['id' => 2, 'is_admin' => 1]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'suNew2']);
 
@@ -92,7 +92,7 @@ class ResetPasswordTest extends TestCase
 
         $target = $this->fakeTarget(['id' => 5, 'is_admin' => 0]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 5, 'new_password' => 'myNew!']);
 
@@ -105,7 +105,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'test_pass']);
 
@@ -116,7 +116,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'plain_text_pw']);
 
@@ -127,7 +127,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $plainPwd = 'verify_this_123!';
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $plainPwd]);
@@ -140,7 +140,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $special = 'P@$$w0rd!#%^&*()中文密码🔐';
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $special]);
@@ -152,7 +152,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $pwd72 = str_repeat('x', 72);
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $pwd72]);
@@ -164,7 +164,7 @@ class ResetPasswordTest extends TestCase
     {
         $target = $this->fakeTarget();
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $pwd73 = str_repeat('A', 72) . 'B';
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $pwd73]);
@@ -186,7 +186,7 @@ class ResetPasswordTest extends TestCase
             return true;
         });
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'np']);
 
@@ -200,7 +200,11 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(['admin_id' => 0, 'new_password' => 'x']);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
+        $this->buildAction($model)->handle(['admin_id' => 0, 'new_password' => 'x']);
     }
 
     public function testFailsWithNegativeAdminId(): void
@@ -208,7 +212,11 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(['admin_id' => -1, 'new_password' => 'x']);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
+        $this->buildAction($model)->handle(['admin_id' => -1, 'new_password' => 'x']);
     }
 
     public function testFailsWithMissingAdminId(): void
@@ -216,7 +224,11 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(['new_password' => 'x']);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
+        $this->buildAction($model)->handle(['new_password' => 'x']);
     }
 
     public function testFailsWithStringAdminId(): void
@@ -224,7 +236,11 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(['admin_id' => 'abc', 'new_password' => 'x']);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
+        $this->buildAction($model)->handle(['admin_id' => 'abc', 'new_password' => 'x']);
     }
 
     public function testFailsWithEmptyPassword(): void
@@ -255,7 +271,9 @@ class ResetPasswordTest extends TestCase
     public function testAdminNotFound404(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -270,7 +288,7 @@ class ResetPasswordTest extends TestCase
 
         $target = $this->fakeTarget(['id' => 1, 'is_admin' => 1]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(1, '管理员')->andReturn($target);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(403);
@@ -285,7 +303,7 @@ class ResetPasswordTest extends TestCase
 
         $target = $this->fakeTarget(['id' => 10, 'is_admin' => 0]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(10)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($target);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(403);
@@ -302,7 +320,7 @@ class ResetPasswordTest extends TestCase
             'id' => 2, 'username' => 'keep_me', 'status' => 1, 'is_admin' => 0,
         ]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'np']);
 
@@ -316,7 +334,7 @@ class ResetPasswordTest extends TestCase
         $oldHash = password_hash('old_pwd', PASSWORD_BCRYPT);
         $target = $this->fakeTarget(['password' => $oldHash]);
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(2)->andReturn($target);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'brand_new']);
 
@@ -347,11 +365,17 @@ class ResetPasswordTest extends TestCase
         ];
         $attrs = array_merge($defaults, $overrides);
 
-        ++self::$mockCounter;
-        $mock = Mockery::mock('alias:ResetTarget' . self::$mockCounter);
-        foreach ($attrs as $k => $v) {
-            $mock->{$k} = $v;
-        }
+        $mock = Mockery::mock(SysAdminModel::class);
+        $mock->shouldReceive('setAttribute')->andReturnUsing(
+            function (string $key, mixed $value) use (&$attrs): void {
+                $attrs[$key] = $value;
+            }
+        );
+        $mock->shouldReceive('getAttribute')->andReturnUsing(
+            function (string $key) use (&$attrs) {
+                return $attrs[$key] ?? null;
+            }
+        );
         $mock->shouldReceive('save')->byDefault()->andReturn(true);
         return $mock;
     }

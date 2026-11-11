@@ -12,9 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Template;
 
+use App\Dto\Email\EmailRequest;
 use App\Model\Notify\EmailTemplateModel;
-use Hyperf\DbConnection\Db;
-use Throwable;
 
 class Update
 {
@@ -23,29 +22,19 @@ class Update
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(EmailRequest $request): array
     {
-        $id = (int) ($data['id'] ?? 0);
-        requireId($id, '模板');
+        $id = (int) $request->id;
+        $template = $this->templateModel->findOrNotFound($id, '邮件模板');
 
-        $template = $this->templateModel->find($id);
-        ! $template && notFound('邮件模板');
-
-        if (! empty($data['template_code']) && $data['template_code'] !== $template->template_code) {
-            $this->templateModel->where('template_code', $data['template_code'])
+        if ($request->template_code !== null && $request->template_code !== $template->template_code) {
+            $this->templateModel->where('template_code', $request->template_code)
                 ->where('id', '!=', $id)
                 ->exists() && paramError('模板编码已存在');
         }
 
-        Db::beginTransaction();
-        try {
-            unset($data['id']);
-            $template->update($data);
-            Db::commit();
-            return $template->fresh()->toArray();
-        } catch (Throwable $e) {
-            Db::rollBack();
-            throw $e;
-        }
+        $template->update($request->toDbArrayFiltered());
+
+        return $template->refresh()->toArray();
     }
 }

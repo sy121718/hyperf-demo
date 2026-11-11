@@ -29,8 +29,7 @@ class Update
     public function handle(AdminRequest $request): array
     {
         $id = (int) $request->id;
-        $admin = $this->adminModel->find($id);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($id, '管理员');
 
         $currentUserId = (int) currentUser('id');
         $isSuperAdmin = currentUser('is_admin') == 1;

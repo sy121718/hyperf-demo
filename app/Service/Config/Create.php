@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Config;
 
+use App\Dto\Config\ConfigRequest;
 use App\Model\System\SysConfigModel;
 
 class Create
@@ -21,24 +22,18 @@ class Create
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(ConfigRequest $request): array
     {
-        $groupKey = $data['group_key'] ?? '';
-        $groupName = $data['group_name'] ?? '';
-
-        empty($groupKey) && paramError('配置分组键不能为空');
-        empty($groupName) && paramError('配置分组名称不能为空');
+        $groupKey = (string) $request->group_key;
 
         $this->configModel->where('group_key', $groupKey)->exists()
             && paramError('配置分组键已存在');
 
-        $config = $this->configModel->create([
-            'group_key' => $groupKey,
-            'group_name' => $groupName,
-            'config_data' => $data['config_data'] ?? [],
-            'remark' => $data['remark'] ?? null,
-            'status' => $data['status'] ?? 1,
-        ]);
+        $dbData = $request->toDbArrayFiltered();
+        $dbData['config_data'] ??= [];
+        $dbData['status'] ??= 1;
+
+        $config = $this->configModel->create($dbData);
 
         return $config->toArray();
     }

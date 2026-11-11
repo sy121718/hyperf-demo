@@ -12,9 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Template;
 
+use App\Dto\Email\EmailRequest;
 use App\Model\Notify\EmailTemplateModel;
-use Hyperf\DbConnection\Db;
-use Throwable;
 
 class Create
 {
@@ -23,22 +22,19 @@ class Create
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(EmailRequest $request): array
     {
-        empty($data['template_name']) && paramError('模板名称不能为空');
-        empty($data['template_code']) && paramError('模板编码不能为空');
+        $templateCode = (string) $request->template_code;
 
-        $this->templateModel->where('template_code', $data['template_code'])->exists()
+        $this->templateModel->where('template_code', $templateCode)->exists()
             && paramError('模板编码已存在');
 
-        Db::beginTransaction();
-        try {
-            $template = $this->templateModel->create($data);
-            Db::commit();
-            return $template->fresh()->toArray();
-        } catch (Throwable $e) {
-            Db::rollBack();
-            throw $e;
-        }
+        $dbData = $request->toDbArrayFiltered();
+        $dbData['template_type'] ??= 'html';
+        $dbData['status'] ??= 1;
+
+        $template = $this->templateModel->create($dbData);
+
+        return $template->toArray();
     }
 }

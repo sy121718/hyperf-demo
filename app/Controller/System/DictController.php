@@ -13,22 +13,23 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\Dict\DictRequest;
+use App\Dto\Dict\DictResponse;
 use App\Service\Dict as DictAction;
 
 class DictController extends AbstractController
 {
-    public function tree(): array
+    public function tree(DictRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(DictAction\GetTreeList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(DictAction\GetTreeList::class)->handle($request);
+        return $this->success(DictResponse::collection($result), '获取成功');
     }
 
     public function info(): array
     {
         $id = (int) $this->request->route('id', 0);
         $result = container()->get(DictAction\GetInfo::class)->handle($id);
-        return $this->success($result, '获取成功');
+        return $this->success(DictResponse::detail($result), '获取成功');
     }
 
     public function items(): array
@@ -38,25 +39,23 @@ class DictController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function create(): array
+    public function create(DictRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(DictAction\Create::class)->handle($data);
-        return $this->success($result, '创建成功');
+        $result = container()->get(DictAction\Create::class)->handle($request);
+        return $this->success(DictResponse::saved($result), '创建成功');
     }
 
-    public function update(): array
+    public function update(DictRequest $request): array
     {
-        $data = $this->request->all();
-        $id = (int) ($data['id'] ?? $this->request->route('id', 0));
-        $result = container()->get(DictAction\Update::class)->handle($id, $data);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(DictAction\Update::class)->handle($request);
+        return $this->success(DictResponse::saved($result), '更新成功');
     }
 
     public function delete(): array
     {
-        $data = $this->request->all();
-        $id = (int) ($data['id'] ?? $this->request->route('id', 0));
+        $id = (int) $this->request->route('id', 0);
         container()->get(DictAction\Delete::class)->handle($id);
         return $this->success(null, '删除成功');
     }

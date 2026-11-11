@@ -26,8 +26,7 @@ class Update
     public function handle(PermissionRequest $request): array
     {
         $id = (int) $request->id;
-        $permission = $this->permissionModel->find($id);
-        ! $permission && notFound('权限');
+        $permission = $this->permissionModel->findOrNotFound($id, '权限');
 
         if ($request->perm_code && $request->perm_code !== $permission->perm_code) {
             ! $this->permissionModel->isFieldUnique(['perm_code' => $request->perm_code], $id)

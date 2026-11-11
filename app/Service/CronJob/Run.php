@@ -25,8 +25,7 @@ class Run
 
     public function handle(int $id): array
     {
-        $job = $this->cronJobModel->find($id);
-        ! $job && notFound('定时任务');
+        $job = $this->cronJobModel->findOrNotFound($id, '定时任务');
 
         if ($job->status != 1) {
             paramError('任务未启用，无法执行');

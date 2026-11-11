@@ -13,37 +13,37 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\Config\ConfigRequest;
+use App\Dto\Config\ConfigResponse;
 use App\Service\Config as ConfigAction;
 
 class ConfigController extends AbstractController
 {
-    public function list(): array
+    public function list(ConfigRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(ConfigAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(ConfigAction\GetList::class)->handle($request);
+        return $this->success(ConfigResponse::page($result), '获取成功');
     }
 
     public function info(): array
     {
         $id = (int) $this->request->route('id', 0);
         $result = container()->get(ConfigAction\GetInfo::class)->handle($id);
-        return $this->success($result, '获取成功');
+        return $this->success(ConfigResponse::detail($result), '获取成功');
     }
 
-    public function create(): array
+    public function create(ConfigRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(ConfigAction\Create::class)->handle($data);
-        return $this->success($result, '创建成功');
+        $result = container()->get(ConfigAction\Create::class)->handle($request);
+        return $this->success(ConfigResponse::saved($result), '创建成功');
     }
 
-    public function update(): array
+    public function update(ConfigRequest $request): array
     {
-        $id = (int) $this->request->route('id', 0);
-        $data = $this->request->all();
-        $result = container()->get(ConfigAction\Update::class)->handle($id, $data);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(ConfigAction\Update::class)->handle($request);
+        return $this->success(ConfigResponse::saved($result), '更新成功');
     }
 
     public function delete(): array

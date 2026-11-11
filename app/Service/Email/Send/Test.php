@@ -12,12 +12,13 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Send;
 
+use App\Dto\Email\EmailRequest;
+
 class Test
 {
-    public function handle(array $data): bool
+    public function handle(EmailRequest $request): bool
     {
-        empty($data['to']) && paramError('收件人不能为空');
-
-        return true;
+        // 收件人是否为空由 DTO 的 required|email 规则拦截
+        return $request->to !== null;
     }
 }

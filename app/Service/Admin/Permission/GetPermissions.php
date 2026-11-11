@@ -23,8 +23,7 @@ class GetPermissions
 
     public function handle(int $staffId): array
     {
-        $admin = $this->adminModel->with(['roles'])->find($staffId);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($staffId, '管理员', ['roles']);
 
         $permissions = [];
         $permissionCodes = [];

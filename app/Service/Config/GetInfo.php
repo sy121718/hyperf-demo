@@ -23,10 +23,7 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        requireId($id, '配置');
-
-        $config = $this->configModel->find($id);
-        ! $config && notFound('配置');
+        $config = $this->configModel->findOrNotFound($id, '配置');
 
         return $config->toArray();
     }

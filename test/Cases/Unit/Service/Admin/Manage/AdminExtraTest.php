@@ -26,7 +26,6 @@ use Hyperf\Database\Model\Builder;
 use Hyperf\Database\Model\Collection;
 use Hyperf\Testing\TestCase;
 use Mockery;
-use stdClass;
 
 /**
  * @internal
@@ -51,12 +50,11 @@ class AdminExtraTest extends TestCase
 
     public function testBanAdminSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
-        $admin->is_admin = 0;
+        $admin = $this->fakeAdmin(['is_admin' => 0]);
         $admin->shouldReceive('save')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
         (new BanAdmin($model))->handle(['id' => 5]);
 
@@ -66,7 +64,9 @@ class AdminExtraTest extends TestCase
     public function testBanAdminNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -77,6 +77,8 @@ class AdminExtraTest extends TestCase
     public function testBanAdminZeroId(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
@@ -86,11 +88,10 @@ class AdminExtraTest extends TestCase
 
     public function testBanSuperAdminFails(): void
     {
-        $admin = Mockery::mock(stdClass::class);
-        $admin->is_admin = 1;
+        $admin = $this->fakeAdmin(['is_admin' => 1]);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(1, '管理员')->andReturn($admin);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(403);
@@ -102,6 +103,8 @@ class AdminExtraTest extends TestCase
     public function testBanAdminMissingId(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
         $this->expectException(BusinessException::class);
 
@@ -112,11 +115,11 @@ class AdminExtraTest extends TestCase
 
     public function testUnbanAdminSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = $this->fakeAdmin();
         $admin->shouldReceive('save')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
         (new UnbanAdmin($model))->handle(['id' => 5]);
 
@@ -127,7 +130,9 @@ class AdminExtraTest extends TestCase
     public function testUnbanAdminNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -138,6 +143,8 @@ class AdminExtraTest extends TestCase
     public function testUnbanAdminZeroId(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
         $this->expectException(BusinessException::class);
 
@@ -148,10 +155,10 @@ class AdminExtraTest extends TestCase
 
     public function testForceLogoutAllSessions(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = $this->fakeAdmin();
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
         $sessBuilder = Mockery::mock(Builder::class);
         $sessBuilder->shouldReceive('update')->with(['status' => 0])->once()->andReturn(3);
@@ -166,10 +173,10 @@ class AdminExtraTest extends TestCase
 
     public function testForceLogoutSpecificSession(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = $this->fakeAdmin();
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
         $sessBuilder = Mockery::mock(Builder::class);
         $sessBuilder->shouldReceive('where')->with('id', 10)->andReturnSelf();
@@ -186,7 +193,9 @@ class AdminExtraTest extends TestCase
     public function testForceLogoutAdminNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
         $sessModel = Mockery::mock(SysAdminSessionsModel::class);
 
         $this->expectException(BusinessException::class);
@@ -198,6 +207,8 @@ class AdminExtraTest extends TestCase
     public function testForceLogoutZeroAdminId(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
         $sessModel = Mockery::mock(SysAdminSessionsModel::class);
 
         $this->expectException(BusinessException::class);
@@ -210,11 +221,11 @@ class AdminExtraTest extends TestCase
 
     public function testResetFailureCountSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = $this->fakeAdmin();
         $admin->shouldReceive('save')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
         (new ResetFailureCount($model))->handle(['id' => 5]);
 
@@ -224,7 +235,9 @@ class AdminExtraTest extends TestCase
     public function testResetFailureCountNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员')
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -235,6 +248,8 @@ class AdminExtraTest extends TestCase
     public function testResetFailureCountZeroId(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
         $this->expectException(BusinessException::class);
 
@@ -294,10 +309,10 @@ class AdminExtraTest extends TestCase
 
     public function testKickUserSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = $this->fakeAdmin();
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
 
         $sessBuilder = Mockery::mock(Builder::class);
         $sessBuilder->shouldReceive('where')->with('status', 1)->andReturnSelf();
@@ -314,7 +329,9 @@ class AdminExtraTest extends TestCase
     public function testKickUserNotFound(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '用户')
+            ->andThrow(new BusinessException(404, '用户不存在'));
         $sessModel = Mockery::mock(SysAdminSessionsModel::class);
 
         $this->expectException(BusinessException::class);
@@ -326,11 +343,35 @@ class AdminExtraTest extends TestCase
     public function testKickUserZeroId(): void
     {
         $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '用户ID不能为空'));
         $sessModel = Mockery::mock(SysAdminSessionsModel::class);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('用户ID不能为空');
 
         (new KickUser($model, $sessModel))->handle(0);
+    }
+
+    /**
+     * 构造 SysAdminModel 的 mock 记录，属性读写经由 setAttribute/getAttribute 落盘。
+     */
+    private function fakeAdmin(array $overrides = []): SysAdminModel
+    {
+        $attributes = $overrides;
+
+        $admin = Mockery::mock(SysAdminModel::class);
+        $admin->shouldReceive('setAttribute')->andReturnUsing(
+            function (string $key, mixed $value) use (&$attributes): void {
+                $attributes[$key] = $value;
+            }
+        );
+        $admin->shouldReceive('getAttribute')->andReturnUsing(
+            function (string $key) use (&$attributes) {
+                return $attributes[$key] ?? null;
+            }
+        );
+
+        return $admin;
     }
 }

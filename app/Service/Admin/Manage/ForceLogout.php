@@ -28,10 +28,7 @@ class ForceLogout
         $adminId = (int) ($data['admin_id'] ?? 0);
         $sessionId = (int) ($data['session_id'] ?? 0);
 
-        requireId($adminId, '管理员');
-
-        $admin = $this->adminModel->find($adminId);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($adminId, '管理员');
 
         $query = $this->sessionsModel->where('admin_id', $adminId);
 

@@ -12,8 +12,10 @@ declare(strict_types=1);
 
 namespace App\Dto;
 
+use Hyperf\Context\Context;
 use Hyperf\HttpServer\Router\Dispatched;
 use Hyperf\Validation\Request\FormRequest;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionProperty;
@@ -32,6 +34,10 @@ use function Hyperf\Collection\data_get;
  * - 子类用 public 属性声明字段，全部给默认值 null
  * - 子类实现 rules()，用 $this->getRouteAction() 或 $this->isListAction() 分支
  * - 校验通过后 hydrate() 自动写入属性并做类型转换
+ *
+ * 数据落在协程上下文而不是实例属性上：DTO 由容器单例持有，同一个 worker 会
+ * 反复复用同一个对象，实例属性会把上一个请求的值带进下一个请求（并发协程
+ * 之间还会互相覆盖）。声明属性在构造时被摘掉，读写统一走 __get/__set。
  */
 abstract class BaseRequestDto extends FormRequest
 {
@@ -47,13 +53,33 @@ abstract class BaseRequestDto extends FormRequest
     public ?array $sort = null;
 
     /**
-     * 校验规则，子类按场景覆盖.
-     *
-     * 分页/搜索/排序的通用规则可直接复用 $this->paginationRules()。
+     * 重写容器构造：实例由容器单例复用，属性数据不能留在对象身上.
      */
-    public function rules(): array
+    public function __construct(ContainerInterface $container)
     {
-        return [];
+        parent::__construct($container);
+
+        $this->resetProperties($this->hydratablePropertyNames());
+    }
+
+    public function __get($name): mixed
+    {
+        return Context::get($this->contextKey($name));
+    }
+
+    public function __set($name, $value): void
+    {
+        Context::set($this->contextKey($name), $value);
+    }
+
+    public function __isset($name): bool
+    {
+        return Context::has($this->contextKey($name));
+    }
+
+    public function __unset($name): void
+    {
+        Context::destroy($this->contextKey($name));
     }
 
     /**
@@ -114,6 +140,8 @@ abstract class BaseRequestDto extends FormRequest
         $ref = new ReflectionClass($this);
 
         foreach ($this->hydratablePropertyNames() as $name) {
+            unset($this->{$name});
+
             $value = data_get($data, $name, null);
             if ($value === null) {
                 continue;
@@ -132,6 +160,7 @@ abstract class BaseRequestDto extends FormRequest
     {
         /** @var static $dto */
         $dto = (new ReflectionClass(static::class))->newInstanceWithoutConstructor();
+        $dto->resetProperties($dto->hydratablePropertyNames());
         $dto->fillFrom($data);
 
         return $dto;
@@ -275,13 +304,41 @@ abstract class BaseRequestDto extends FormRequest
     {
         $ref = new ReflectionClass($this);
 
-        foreach ($this->dtoPropertyNames() as $name) {
+        foreach ($this->hydratablePropertyNames() as $name) {
+            unset($this->{$name});
+
             $value = data_get($data, $name, null);
             if ($value === null) {
                 continue;
             }
 
             $this->{$name} = $this->castValue($value, $ref, $name);
+        }
+    }
+
+    /**
+     * 属性在协程上下文中的存储键：按 DTO 类隔离.
+     */
+    protected function contextKey(string $name): string
+    {
+        return static::class . '.dto.' . $name;
+    }
+
+    /**
+     * 清空指定字段的上下文数据.
+     *
+     * 注意：unset 一个已摘除的属性会走 __unset，必须在摘除时就一次性清掉，
+     * 不能重复 unset，否则每次构造都会产生一次多余调用。
+     * @param array<int, string> $names
+     */
+    protected function resetProperties(array $names): void
+    {
+        foreach ($names as $name) {
+            if (Context::has($this->contextKey($name))) {
+                Context::destroy($this->contextKey($name));
+            }
+            // 摘掉声明属性，后续读写才会落到 __get/__set
+            unset($this->{$name});
         }
     }
 

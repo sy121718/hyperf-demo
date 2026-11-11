@@ -22,7 +22,6 @@ use Hyperf\Database\Model\Builder;
 use Hyperf\Testing\TestCase;
 use Mockery;
 use Psr\SimpleCache\CacheInterface;
-use stdClass;
 
 /**
  * @internal
@@ -45,14 +44,13 @@ class SessionExtraTest extends TestCase
 
     public function testGetInfoSuccess(): void
     {
-        $session = Mockery::mock(stdClass::class);
+        $session = Mockery::mock(SysAdminSessionsModel::class);
         $session->shouldReceive('toArray')->andReturn(['id' => 1, 'admin_id' => 5]);
 
-        $builder = Mockery::mock(Builder::class);
-        $builder->shouldReceive('find')->with(1)->andReturn($session);
-
         $model = Mockery::mock(SysAdminSessionsModel::class);
-        $model->shouldReceive('with')->andReturn($builder);
+        $model->shouldReceive('findOrNotFound')
+            ->with(1, '会话', ['admin:id,username,name'])
+            ->andReturn($session);
 
         $result = (new GetInfo($model))->handle(1);
 
@@ -61,11 +59,9 @@ class SessionExtraTest extends TestCase
 
     public function testGetInfoNotFound(): void
     {
-        $builder = Mockery::mock(Builder::class);
-        $builder->shouldReceive('find')->andReturn(null);
-
         $model = Mockery::mock(SysAdminSessionsModel::class);
-        $model->shouldReceive('with')->andReturn($builder);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '会话不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -76,6 +72,8 @@ class SessionExtraTest extends TestCase
     public function testGetInfoZeroId(): void
     {
         $model = Mockery::mock(SysAdminSessionsModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '会话ID不能为空'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('会话ID不能为空');
@@ -85,13 +83,21 @@ class SessionExtraTest extends TestCase
 
     public function testKickoutSuccess(): void
     {
-        $session = Mockery::mock(stdClass::class);
-        $session->status = 1;
-        $session->jwt_token = 'abc123';
+        $status = 1;
+        $session = Mockery::mock(SysAdminSessionsModel::class);
+        $session->shouldReceive('getAttribute')->with('status')->andReturnUsing(function () use (&$status) {
+            return $status;
+        });
+        $session->shouldReceive('offsetExists')->with('jwt_token')->andReturn(true);
+        $session->shouldReceive('getAttribute')->with('jwt_token')->andReturn('abc123');
+        $session->shouldReceive('offsetGet')->with('jwt_token')->andReturn('abc123');
+        $session->shouldReceive('setAttribute')->with('status', 0)->andReturnUsing(function () use (&$status) {
+            $status = 0;
+        });
         $session->shouldReceive('save')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAdminSessionsModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($session);
+        $model->shouldReceive('findOrNotFound')->with(1, '会话')->andReturn($session);
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('delete')->once();
@@ -99,17 +105,17 @@ class SessionExtraTest extends TestCase
         $result = (new Kickout($model, $cache))->handle(1);
 
         $this->assertTrue($result);
-        $this->assertSame(0, $session->status);
+        $this->assertSame(0, $status);
     }
 
     public function testKickoutAlreadyInactive(): void
     {
-        $session = Mockery::mock(stdClass::class);
-        $session->status = 0;
+        $session = Mockery::mock(SysAdminSessionsModel::class);
+        $session->shouldReceive('getAttribute')->with('status')->andReturn(0);
         $session->shouldNotReceive('save');
 
         $model = Mockery::mock(SysAdminSessionsModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($session);
+        $model->shouldReceive('findOrNotFound')->with(1, '会话')->andReturn($session);
 
         $cache = Mockery::mock(CacheInterface::class);
 
@@ -121,7 +127,8 @@ class SessionExtraTest extends TestCase
     public function testKickoutNotFound(): void
     {
         $model = Mockery::mock(SysAdminSessionsModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '会话不存在'));
 
         $cache = Mockery::mock(CacheInterface::class);
 

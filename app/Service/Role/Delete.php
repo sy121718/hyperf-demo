@@ -29,10 +29,8 @@ class Delete
     public function handle(array $data): bool
     {
         $id = (int) ($data['id'] ?? 0);
-        requireId($id, '角色');
 
-        $role = $this->roleModel->find($id);
-        ! $role && notFound('角色');
+        $role = $this->roleModel->findOrNotFound($id, '角色');
 
         $this->adminRoleModel->where('role_code', $role->role_code)->exists()
             && paramError('角色存在关联的用户，无法删除');

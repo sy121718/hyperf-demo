@@ -16,11 +16,9 @@ use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
 use App\Service\Admin\Manage\GetInfo;
 use Hyperf\Context\Context;
-use Hyperf\Database\Model\Builder;
 use Hyperf\Testing\TestCase;
 use Mockery;
 use Mockery\MockInterface;
-use stdClass;
 
 /**
  * @internal
@@ -45,18 +43,17 @@ class GetInfoTest extends TestCase
 
     public function testGetInfoSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = Mockery::mock(SysAdminModel::class);
         $admin->shouldReceive('toArray')->andReturn([
             'id' => 5, 'username' => 'test', 'name' => 'Test',
             'roles' => [['id' => 1, 'name' => 'Admin']],
             'sessions' => [],
         ]);
 
-        $builder = Mockery::mock(Builder::class);
-        $builder->shouldReceive('find')->with(5)->andReturn($admin);
-
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('with')->with(['roles', 'sessions'])->andReturn($builder);
+        $model->shouldReceive('findOrNotFound')
+            ->with(5, '管理员', ['roles', 'sessions'])
+            ->andReturn($admin);
 
         $result = $this->buildAction($model)->handle(5);
 
@@ -69,27 +66,34 @@ class GetInfoTest extends TestCase
 
     public function testGetInfoFailsWithZeroId(): void
     {
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(0);
+        $this->buildAction($model)->handle(0);
     }
 
     public function testGetInfoFailsWithNegativeId(): void
     {
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(400, '管理员ID不能为空'));
+
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction()->handle(-1);
+        $this->buildAction($model)->handle(-1);
     }
 
     public function testGetInfoFailsWhenNotFound(): void
     {
-        $builder = Mockery::mock(Builder::class);
-        $builder->shouldReceive('find')->with(999)->andReturn(null);
-
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('with')->andReturn($builder);
+        $model->shouldReceive('findOrNotFound')
+            ->with(999, '管理员', ['roles', 'sessions'])
+            ->andThrow(new BusinessException(404, '管理员不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);

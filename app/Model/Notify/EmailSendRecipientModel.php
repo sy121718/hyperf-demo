@@ -16,6 +16,15 @@ use App\Common\Model\BaseModel;
 
 class EmailSendRecipientModel extends BaseModel
 {
+    /** 待发送 */
+    public const STATUS_PENDING = 0;
+
+    /** 发送成功 */
+    public const STATUS_SUCCESS = 1;
+
+    /** 发送失败 */
+    public const STATUS_FAILED = 2;
+
     public bool $timestamps = true;
 
     protected ?string $table = 'email_send_recipient';

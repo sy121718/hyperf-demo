@@ -24,10 +24,8 @@ class ResetFailureCount
     public function handle(array $data): void
     {
         $id = (int) ($data['id'] ?? 0);
-        requireId($id, '管理员');
 
-        $admin = $this->adminModel->find($id);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($id, '管理员');
 
         $admin->login_failure_count = 0;
         $admin->save();

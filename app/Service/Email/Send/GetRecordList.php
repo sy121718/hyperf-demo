@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Send;
 
+use App\Dto\Email\EmailRequest;
 use App\Model\Notify\EmailSendRecordModel;
 
 class GetRecordList
@@ -21,15 +22,16 @@ class GetRecordList
     ) {
     }
 
-    public function handle(array $data): mixed
+    public function handle(EmailRequest $request): mixed
     {
-        $search = $data['search'] ?? null;
-
         return $this->recordModel
-            ->with(['creator', 'template'])
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny($this->recordModel->getSearchableFields(), 'like', "%{$search}%"))
-            ->sort($data)
-            ->paginate((int) ($data['limit'] ?? 10), ['*'], 'page', (int) ($data['page'] ?? 1));
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny(
+                $this->recordModel->getSearchableFields(),
+                'like',
+                "%{$request->search}%"
+            ))
+            ->sort($request->toQueryArray())
+            ->paginate($request->pageSize(), ['*'], 'page', $request->pageNumber());
     }
 }

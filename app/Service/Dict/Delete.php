@@ -24,10 +24,7 @@ class Delete
 
     public function handle(int $id): bool
     {
-        requireId($id, '字典');
-
-        $dict = $this->dictModel->find($id);
-        ! $dict && notFound('字典');
+        $dict = $this->dictModel->findOrNotFound($id, '字典');
 
         $dict->delete();
 

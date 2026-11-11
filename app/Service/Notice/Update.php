@@ -29,8 +29,7 @@ class Update
         Db::beginTransaction();
         try {
             $id = (int) $request->id;
-            $notice = $this->noticeModel->find($id);
-            ! $notice && notFound('通知');
+            $notice = $this->noticeModel->findOrNotFound($id, '通知');
 
             $updateData = $request->toDbArrayFiltered();
 

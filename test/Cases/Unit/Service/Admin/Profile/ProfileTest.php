@@ -18,10 +18,8 @@ use App\Service\Admin\Profile\ChangePassword;
 use App\Service\Admin\Profile\GetProfile;
 use App\Service\Admin\Profile\UpdateProfile;
 use Hyperf\Context\Context;
-use Hyperf\Database\Model\Builder;
 use Hyperf\Testing\TestCase;
 use Mockery;
-use stdClass;
 
 /**
  * @internal
@@ -44,16 +42,15 @@ class ProfileTest extends TestCase
 
     public function testGetProfileSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
+        $admin = $this->fakeAdmin();
         $admin->shouldReceive('toArray')->andReturn([
             'id' => 5, 'username' => 'testuser', 'password' => 'hashed', 'roles' => [],
         ]);
 
-        $builder = Mockery::mock(Builder::class);
-        $builder->shouldReceive('find')->with(5)->andReturn($admin);
-
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('with')->andReturn($builder);
+        $model->shouldReceive('findOrNotFound')
+            ->with(5, '用户', ['roles:sys_role.id,sys_role.role_name,sys_role.role_code'])
+            ->andReturn($admin);
 
         $result = (new GetProfile($model))->handle();
 
@@ -75,13 +72,11 @@ class ProfileTest extends TestCase
 
     public function testUpdateProfileSuccess(): void
     {
-        $admin = Mockery::mock(stdClass::class);
-        $admin->email = 'old@test.com';
-        $admin->phone = '111';
+        $admin = $this->fakeAdmin(['email' => 'old@test.com', 'phone' => '111']);
         $admin->shouldReceive('update')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
 
         $result = (new UpdateProfile($model))->handle(['name' => 'New Name']);
 
@@ -90,12 +85,10 @@ class ProfileTest extends TestCase
 
     public function testUpdateProfileEmailTaken(): void
     {
-        $admin = Mockery::mock(stdClass::class);
-        $admin->email = 'old@test.com';
-        $admin->phone = '111';
+        $admin = $this->fakeAdmin(['email' => 'old@test.com', 'phone' => '111']);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
         $model->shouldReceive('where->where->exists')->andReturn(true);
 
         $this->expectException(BusinessException::class);
@@ -108,12 +101,11 @@ class ProfileTest extends TestCase
     {
         $hashed = password_hash('old123', PASSWORD_DEFAULT);
 
-        $admin = Mockery::mock(stdClass::class);
-        $admin->password = $hashed;
+        $admin = $this->fakeAdmin(['password' => $hashed]);
         $admin->shouldReceive('save')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
 
         $result = (new ChangePassword($model))->handle('old123', 'new456');
 
@@ -124,11 +116,10 @@ class ProfileTest extends TestCase
     {
         $hashed = password_hash('correct', PASSWORD_DEFAULT);
 
-        $admin = Mockery::mock(stdClass::class);
-        $admin->password = $hashed;
+        $admin = $this->fakeAdmin(['password' => $hashed]);
 
         $model = Mockery::mock(SysAdminModel::class);
-        $model->shouldReceive('find')->with(5)->andReturn($admin);
+        $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('旧密码错误');
@@ -146,5 +137,25 @@ class ProfileTest extends TestCase
         $this->expectExceptionCode(401);
 
         (new ChangePassword($model))->handle('old', 'new');
+    }
+
+    /**
+     * 构造 SysAdminModel 的 mock 记录，属性读写经由 setAttribute/getAttribute 落盘。
+     */
+    private function fakeAdmin(array $attributes = []): SysAdminModel
+    {
+        $admin = Mockery::mock(SysAdminModel::class);
+        $admin->shouldReceive('setAttribute')->andReturnUsing(
+            function (string $key, mixed $value) use (&$attributes): void {
+                $attributes[$key] = $value;
+            }
+        );
+        $admin->shouldReceive('getAttribute')->andReturnUsing(
+            function (string $key) use (&$attributes) {
+                return $attributes[$key] ?? null;
+            }
+        );
+
+        return $admin;
     }
 }

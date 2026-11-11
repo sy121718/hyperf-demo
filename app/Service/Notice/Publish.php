@@ -27,8 +27,7 @@ class Publish
     {
         Db::beginTransaction();
         try {
-            $notice = $this->noticeModel->find($data['id']);
-            ! $notice && notFound('通知');
+            $notice = $this->noticeModel->findOrNotFound($data['id'], '通知');
 
             $notice->status == 1 && paramError('通知已发布');
 

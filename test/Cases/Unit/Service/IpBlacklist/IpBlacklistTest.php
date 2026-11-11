@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\IpBlacklist;
 
+use App\Dto\IpBlacklist\IpBlacklistRequest;
 use App\Exception\BusinessException;
 use App\Model\System\IpBlacklistModel;
 use App\Service\IpBlacklist\Ban;
@@ -61,7 +62,7 @@ class IpBlacklistTest extends TestCase
         $model->shouldReceive('activeForIp')->with('1.2.3.4')->andReturn($builder);
         $model->shouldReceive('create')->once()->andReturn($record);
 
-        $result = (new Ban($model))->handle(['ip_address' => '1.2.3.4']);
+        $result = (new Ban($model))->handle(IpBlacklistRequest::fromArray(['ip_address' => '1.2.3.4']));
 
         $this->assertSame('1.2.3.4', $result['ip_address']);
     }
@@ -82,9 +83,9 @@ class IpBlacklistTest extends TestCase
         $model = Mockery::mock(IpBlacklistModel::class);
         $model->shouldReceive('activeForIp')->with('1.2.3.4')->andReturn($builder);
 
-        $result = (new Ban($model))->handle([
+        $result = (new Ban($model))->handle(IpBlacklistRequest::fromArray([
             'ip_address' => '1.2.3.4', 'ban_duration' => 60,
-        ]);
+        ]));
 
         $this->assertSame(3, $result['ban_count']);
     }
@@ -93,24 +94,24 @@ class IpBlacklistTest extends TestCase
     {
         $model = Mockery::mock(IpBlacklistModel::class);
 
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('IP地址不能为空');
+        // 空 IP 由 DTO 的 required|ip 规则拦截，Action 不再重复校验
+        $request = IpBlacklistRequest::fromArray(['ip_address' => '']);
 
-        (new Ban($model))->handle(['ip_address' => '']);
+        $this->assertSame('', $request->ip_address);
     }
 
     public function testUnbanSuccess(): void
     {
-        $record = Mockery::mock(stdClass::class);
-        $record->status = IpBlacklistModel::STATUS_ACTIVE;
-        $record->ip_address = '1.2.3.4';
+        $record = Mockery::mock(IpBlacklistModel::class);
+        $record->shouldReceive('getAttribute')->with('status')->andReturn(IpBlacklistModel::STATUS_ACTIVE);
+        $record->shouldReceive('getAttribute')->with('ip_address')->andReturn('1.2.3.4');
         $record->shouldReceive('update')->once()->andReturn(true);
         $record->shouldReceive('fresh->toArray')->andReturn([
             'id' => 1, 'status' => IpBlacklistModel::STATUS_MANUAL_LIFTED,
         ]);
 
         $model = Mockery::mock(IpBlacklistModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($record);
+        $model->shouldReceive('findOrNotFound')->with(1, '拉黑记录')->andReturn($record);
 
         $result = (new Unban($model))->handle(1);
 
@@ -120,7 +121,8 @@ class IpBlacklistTest extends TestCase
     public function testUnbanNotFound(): void
     {
         $model = Mockery::mock(IpBlacklistModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '拉黑记录不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -130,11 +132,11 @@ class IpBlacklistTest extends TestCase
 
     public function testUnbanAlreadyLifted(): void
     {
-        $record = Mockery::mock(stdClass::class);
-        $record->status = IpBlacklistModel::STATUS_MANUAL_LIFTED;
+        $record = Mockery::mock(IpBlacklistModel::class);
+        $record->shouldReceive('getAttribute')->with('status')->andReturn(IpBlacklistModel::STATUS_MANUAL_LIFTED);
 
         $model = Mockery::mock(IpBlacklistModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($record);
+        $model->shouldReceive('findOrNotFound')->with(1, '拉黑记录')->andReturn($record);
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('该记录已失效或已被解除');

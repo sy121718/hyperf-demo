@@ -13,22 +13,22 @@ declare(strict_types=1);
 namespace App\Controller\Ops;
 
 use App\Controller\AbstractController;
+use App\Dto\Log\LogRequest;
+use App\Dto\Log\LogResponse;
 use App\Service\Ops\LoginLog;
 use App\Service\Ops\OperationLog;
 
 class LogController extends AbstractController
 {
-    public function loginLog(): array
+    public function loginLog(LogRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(LoginLog\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(LoginLog\GetList::class)->handle($request);
+        return $this->success(LogResponse::page($result), '获取成功');
     }
 
-    public function operationLog(): array
+    public function operationLog(LogRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(OperationLog\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(OperationLog\GetList::class)->handle($request);
+        return $this->success(LogResponse::page($result), '获取成功');
     }
 }

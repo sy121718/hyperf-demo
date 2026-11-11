@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Config;
 
+use App\Dto\Config\ConfigRequest;
 use App\Exception\BusinessException;
 use App\Model\System\SysConfigModel;
 use App\Service\Config\Create;
@@ -53,9 +54,9 @@ class ConfigTest extends TestCase
         $model->shouldReceive('where->exists')->andReturn(false);
         $model->shouldReceive('create')->once()->andReturn($config);
 
-        $result = (new Create($model))->handle([
+        $result = (new Create($model))->handle(ConfigRequest::fromArray([
             'group_key' => 'site', 'group_name' => '站点配置',
-        ]);
+        ]));
 
         $this->assertArrayHasKey('id', $result);
     }
@@ -68,26 +69,36 @@ class ConfigTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('配置分组键已存在');
 
-        (new Create($model))->handle(['group_key' => 'dup', 'group_name' => 'test']);
+        (new Create($model))->handle(ConfigRequest::fromArray(['group_key' => 'dup', 'group_name' => 'test']));
     }
 
-    public function testCreateEmptyGroupKey(): void
+    public function testCreateFallsBackToDefaults(): void
     {
+        // 未提交 config_data / status 时补齐默认值，避免写库时显式写入 NULL
+        $config = Mockery::mock(stdClass::class);
+        $config->shouldReceive('toArray')->andReturn(['id' => 1]);
+
         $model = Mockery::mock(SysConfigModel::class);
+        $model->shouldReceive('where->exists')->andReturn(false);
+        $model->shouldReceive('create')->once()->with([
+            'group_key' => 'site',
+            'group_name' => '站点配置',
+            'config_data' => [],
+            'status' => 1,
+        ])->andReturn($config);
 
-        $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('配置分组键不能为空');
-
-        (new Create($model))->handle(['group_key' => '', 'group_name' => 'test']);
+        (new Create($model))->handle(ConfigRequest::fromArray([
+            'group_key' => 'site', 'group_name' => '站点配置',
+        ]));
     }
 
     public function testGetInfoSuccess(): void
     {
-        $config = Mockery::mock(stdClass::class);
+        $config = Mockery::mock(SysConfigModel::class);
         $config->shouldReceive('toArray')->andReturn(['id' => 1, 'group_key' => 'test']);
 
         $model = Mockery::mock(SysConfigModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($config);
+        $model->shouldReceive('findOrNotFound')->with(1, '配置')->andReturn($config);
 
         $result = (new GetInfo($model))->handle(1);
 
@@ -97,7 +108,8 @@ class ConfigTest extends TestCase
     public function testGetInfoNotFound(): void
     {
         $model = Mockery::mock(SysConfigModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '配置不存在'));
 
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
@@ -107,12 +119,12 @@ class ConfigTest extends TestCase
 
     public function testDeleteSuccess(): void
     {
-        $config = Mockery::mock(stdClass::class);
-        $config->group_key = 'test';
+        $config = Mockery::mock(SysConfigModel::class);
+        $config->shouldReceive('getAttribute')->with('group_key')->andReturn('test');
         $config->shouldReceive('delete')->once()->andReturn(true);
 
         $model = Mockery::mock(SysConfigModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($config);
+        $model->shouldReceive('findOrNotFound')->with(1, '配置')->andReturn($config);
 
         $cache = Mockery::mock(CacheInterface::class);
         $cache->shouldReceive('delete')->with('config:test')->once();
@@ -125,7 +137,8 @@ class ConfigTest extends TestCase
     public function testDeleteNotFound(): void
     {
         $model = Mockery::mock(SysConfigModel::class);
-        $model->shouldReceive('find')->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '配置不存在'));
 
         $cache = Mockery::mock(CacheInterface::class);
 

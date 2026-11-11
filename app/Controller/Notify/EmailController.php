@@ -13,52 +13,49 @@ declare(strict_types=1);
 namespace App\Controller\Notify;
 
 use App\Controller\AbstractController;
+use App\Dto\Email\EmailRequest;
+use App\Dto\Email\EmailResponse;
 use App\Service\Email\Send as SendAction;
 use App\Service\Email\Template as TemplateAction;
 
 class EmailController extends AbstractController
 {
-    public function send(): array
+    public function send(EmailRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(SendAction\Send::class)->handle($data);
+        $result = container()->get(SendAction\Send::class)->handle($request);
         return $this->success($result, '发送成功');
     }
 
-    public function sendRecords(): array
+    public function sendRecords(EmailRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(SendAction\GetRecordList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(SendAction\GetRecordList::class)->handle($request);
+        return $this->success(EmailResponse::page($result), '获取成功');
     }
 
-    public function testSend(): array
+    public function testSend(EmailRequest $request): array
     {
-        $data = $this->request->all();
-        container()->get(SendAction\Test::class)->handle($data);
+        container()->get(SendAction\Test::class)->handle($request);
         return $this->success(null, '测试发送成功');
     }
 
-    public function templateList(): array
+    public function templateList(EmailRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(TemplateAction\GetList::class)->handle($data);
-        return $this->success($result, '获取成功');
+        $result = container()->get(TemplateAction\GetList::class)->handle($request);
+        return $this->success(EmailResponse::page($result), '获取成功');
     }
 
-    public function templateCreate(): array
+    public function templateCreate(EmailRequest $request): array
     {
-        $data = $this->request->all();
-        $result = container()->get(TemplateAction\Create::class)->handle($data);
-        return $this->success($result, '创建成功');
+        $result = container()->get(TemplateAction\Create::class)->handle($request);
+        return $this->success(EmailResponse::saved($result), '创建成功');
     }
 
-    public function templateUpdate(): array
+    public function templateUpdate(EmailRequest $request): array
     {
-        $data = $this->request->all();
-        $data['id'] = (int) $this->request->route('id', $data['id'] ?? 0);
-        $result = container()->get(TemplateAction\Update::class)->handle($data);
-        return $this->success($result, '更新成功');
+        // 路由参数优先，覆盖请求体里的 id
+        $request->id = (int) $this->request->route('id', $request->id ?? 0);
+        $result = container()->get(TemplateAction\Update::class)->handle($request);
+        return $this->success(EmailResponse::saved($result), '更新成功');
     }
 
     public function templateDelete(): array

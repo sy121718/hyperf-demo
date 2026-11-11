@@ -23,8 +23,7 @@ class Delete
 
     public function handle(int $id): bool
     {
-        $template = $this->templateModel->find($id);
-        ! $template && notFound('邮件模板');
+        $template = $this->templateModel->findOrNotFound($id, '邮件模板');
 
         $template->delete();
 

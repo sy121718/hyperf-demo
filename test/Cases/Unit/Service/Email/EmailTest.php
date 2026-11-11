@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Email;
 
+use App\Dto\Email\EmailRequest;
 use App\Exception\BusinessException;
 use App\Model\Notify\EmailSendRecipientModel;
 use App\Model\Notify\EmailSendRecordModel;
@@ -22,6 +23,7 @@ use App\Service\Email\Template\Create;
 use App\Service\Email\Template\Delete;
 use Mockery;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * @internal
@@ -39,39 +41,40 @@ class EmailTest extends TestCase
         $model = Mockery::mock(EmailTemplateModel::class);
         $model->shouldReceive('where->exists')->andReturn(true);
 
-        $action = new Create($model);
-
         $this->expectException(BusinessException::class);
-        $action->handle([
+        $this->expectExceptionMessage('模板编码已存在');
+
+        (new Create($model))->handle(EmailRequest::fromArray([
             'template_name' => '测试模板',
             'template_code' => 'existing_code',
-        ]);
+        ]));
     }
 
-    public function testTemplateCreateEmptyName(): void
+    public function testTemplateCreateSuccess(): void
     {
+        $template = Mockery::mock(stdClass::class);
+        $template->shouldReceive('toArray')->andReturn(['id' => 1, 'template_code' => 'tpl']);
+
         $model = Mockery::mock(EmailTemplateModel::class);
+        $model->shouldReceive('where->exists')->andReturn(false);
+        // 未提交的 template_type / status 补默认值
+        $model->shouldReceive('create')->once()->with([
+            'template_name' => '测试模板',
+            'template_code' => 'tpl',
+            'subject' => '标题',
+            'content' => '<p>正文</p>',
+            'template_type' => 'html',
+            'status' => 1,
+        ])->andReturn($template);
 
-        $action = new Create($model);
+        $result = (new Create($model))->handle(EmailRequest::fromArray([
+            'template_name' => '测试模板',
+            'template_code' => 'tpl',
+            'subject' => '标题',
+            'content' => '<p>正文</p>',
+        ]));
 
-        $this->expectException(BusinessException::class);
-        $action->handle([
-            'template_name' => '',
-            'template_code' => 'test_code',
-        ]);
-    }
-
-    public function testTemplateCreateEmptyCode(): void
-    {
-        $model = Mockery::mock(EmailTemplateModel::class);
-
-        $action = new Create($model);
-
-        $this->expectException(BusinessException::class);
-        $action->handle([
-            'template_name' => 'test',
-            'template_code' => '',
-        ]);
+        $this->assertSame(1, $result['id']);
     }
 
     public function testTemplateDeleteSuccess(): void
@@ -80,7 +83,7 @@ class EmailTest extends TestCase
         $template->shouldReceive('delete')->once()->andReturn(true);
 
         $model = Mockery::mock(EmailTemplateModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($template);
+        $model->shouldReceive('findOrNotFound')->with(1, '邮件模板')->andReturn($template);
 
         $action = new Delete($model);
         $this->assertTrue($action->handle(1));
@@ -89,34 +92,13 @@ class EmailTest extends TestCase
     public function testTemplateDeleteNotFound(): void
     {
         $model = Mockery::mock(EmailTemplateModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '邮件模板不存在'));
 
         $action = new Delete($model);
 
         $this->expectException(BusinessException::class);
         $action->handle(999);
-    }
-
-    public function testSendEmptySubject(): void
-    {
-        $recordModel = Mockery::mock(EmailSendRecordModel::class);
-        $recipientModel = Mockery::mock(EmailSendRecipientModel::class);
-
-        $action = new Send($recordModel, $recipientModel);
-
-        $this->expectException(BusinessException::class);
-        $action->handle(['subject' => '', 'content' => 'test', 'to' => 'test@example.com']);
-    }
-
-    public function testSendEmptyContent(): void
-    {
-        $recordModel = Mockery::mock(EmailSendRecordModel::class);
-        $recipientModel = Mockery::mock(EmailSendRecipientModel::class);
-
-        $action = new Send($recordModel, $recipientModel);
-
-        $this->expectException(BusinessException::class);
-        $action->handle(['subject' => 'test', 'content' => '', 'to' => 'test@example.com']);
     }
 
     public function testSendNoRecipient(): void
@@ -127,20 +109,59 @@ class EmailTest extends TestCase
         $action = new Send($recordModel, $recipientModel);
 
         $this->expectException(BusinessException::class);
-        $action->handle(['subject' => 'test', 'content' => 'test']);
+        $this->expectExceptionMessage('收件人不能为空');
+
+        $action->handle(EmailRequest::fromArray(['subject' => 'test', 'content' => 'test']));
+    }
+
+    public function testRecipientsPrefersToList(): void
+    {
+        // to_list 存在时忽略 to
+        $request = EmailRequest::fromArray([
+            'to' => 'single@example.com',
+            'to_list' => ['a@example.com', 'b@example.com'],
+        ]);
+
+        $this->assertSame(['a@example.com', 'b@example.com'], $request->recipients());
+    }
+
+    public function testRecipientsWrapsSingleTo(): void
+    {
+        $request = EmailRequest::fromArray(['to' => 'single@example.com']);
+
+        $this->assertSame(['single@example.com'], $request->recipients());
+    }
+
+    public function testSendWritesIntegerStatus(): void
+    {
+        // status 是 tinyint，写 'pending' 会直接 500
+        $record = new stdClass();
+        $record->id = 7;
+
+        $recordModel = Mockery::mock(EmailSendRecordModel::class);
+        $recordModel->shouldReceive('create')->once()->withArgs(
+            static fn (array $data) => $data['status'] === EmailSendRecordModel::STATUS_PENDING
+                && $data['total_recipients'] === 1
+        )->andReturn($record);
+
+        $recipientModel = Mockery::mock(EmailSendRecipientModel::class);
+        $recipientModel->shouldReceive('insert')->once()->withArgs(
+            static fn (array $rows) => $rows[0]['status'] === EmailSendRecipientModel::STATUS_PENDING
+                && $rows[0]['record_id'] === 7
+        )->andReturn(true);
+
+        $result = (new Send($recordModel, $recipientModel))->handle(EmailRequest::fromArray([
+            'subject' => '测试',
+            'content' => '内容',
+            'to' => 'a@example.com',
+        ]));
+
+        $this->assertSame(7, $result['record_id']);
+        $this->assertSame(1, $result['recipient_count']);
     }
 
     public function testTestSendSuccess(): void
     {
-        $action = new TestSend();
-        $this->assertTrue($action->handle(['to' => 'test@example.com']));
-    }
-
-    public function testTestSendEmptyTo(): void
-    {
-        $action = new TestSend();
-
-        $this->expectException(BusinessException::class);
-        $action->handle(['to' => '']);
+        $this->assertTrue((new TestSend())->handle(EmailRequest::fromArray(['to' => 'test@example.com'])));
     }
 }

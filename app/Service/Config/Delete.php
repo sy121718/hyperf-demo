@@ -26,10 +26,7 @@ class Delete
 
     public function handle(int $id): bool
     {
-        requireId($id, '配置');
-
-        $config = $this->configModel->find($id);
-        ! $config && notFound('配置');
+        $config = $this->configModel->findOrNotFound($id, '配置');
 
         $groupKey = $config->group_key;
         $config->delete();

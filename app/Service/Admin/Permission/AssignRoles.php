@@ -39,8 +39,7 @@ class AssignRoles
         ! empty($adminCode) || paramError('管理员标识不能为空');
         ! empty($roleCodes) || paramError('角色标识不能为空');
 
-        $admin = $this->adminModel->where('admin_code', $adminCode)->first();
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->firstOrNotFound(['admin_code' => $adminCode], '管理员');
 
         if ($admin->is_admin == 1) {
             paramError('不能修改超级管理员的角色', 403);

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Ops\Session;
 
+use App\Dto\Session\SessionRequest;
 use App\Model\Admin\SysAdminSessionsModel;
 
 class GetList
@@ -21,26 +22,15 @@ class GetList
     ) {
     }
 
-    public function handle(array $data): mixed
+    public function handle(SessionRequest $request): mixed
     {
-        $withDetail = ($data['with'] ?? '') === 'detail';
-
-        // 列表页只查必要字段
-        $fields = $withDetail ? ['*'] : [
-            'id', 'admin_id', 'login_ip', 'location', 'isp', 'user_agent',
-            'last_active_time', 'login_time', 'create_time',
-        ];
-
-        $query = $this->sessionModel
+        return $this->sessionModel
             ->where('status', 1)
-            ->when($data['username'] ?? null, fn ($q, $v) => $q->whereHas('admin', fn ($sub) => $sub->where('username', 'like', "%{$v}%")))
-            ->orderBy('last_active_time', 'desc');
-
-        // 条件加载关联
-        if ($withDetail) {
-            $query->with(['admin:id,username,name']);
-        }
-
-        return $query->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
+            ->when($request->username, fn ($q, $v) => $q->whereHas(
+                'admin',
+                fn ($sub) => $sub->where('username', 'like', "%{$v}%")
+            ))
+            ->orderBy('last_active_time', 'desc')
+            ->paginate($request->pageSize(), ['*'], 'page', $request->pageNumber());
     }
 }

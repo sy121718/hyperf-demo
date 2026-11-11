@@ -17,6 +17,18 @@ use App\Model\Admin\SysAdminModel;
 
 class EmailSendRecordModel extends BaseModel
 {
+    /** 待发送 */
+    public const STATUS_PENDING = 0;
+
+    /** 发送中 */
+    public const STATUS_SENDING = 1;
+
+    /** 全部发送成功 */
+    public const STATUS_SUCCESS = 2;
+
+    /** 全部发送失败 */
+    public const STATUS_FAILED = 3;
+
     protected ?string $table = 'email_send_record';
 
     protected array $fillable = [
@@ -28,6 +40,7 @@ class EmailSendRecordModel extends BaseModel
     protected array $casts = [
         'id' => 'integer',
         'template_id' => 'integer',
+        'status' => 'integer',
         'total_recipients' => 'integer',
         'success_count' => 'integer',
         'failed_count' => 'integer',

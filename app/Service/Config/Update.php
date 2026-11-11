@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Config;
 
 use App\Common\CacheKeys;
+use App\Dto\Config\ConfigRequest;
 use App\Model\System\SysConfigModel;
 use Psr\SimpleCache\CacheInterface;
 
@@ -24,31 +25,28 @@ class Update
     ) {
     }
 
-    public function handle(int $id, array $data): array
+    public function handle(ConfigRequest $request): array
     {
-        requireId($id, '配置');
+        $id = (int) $request->id;
+        $config = $this->configModel->findOrNotFound($id, '配置');
 
-        $config = $this->configModel->find($id);
-        ! $config && notFound('配置');
-
-        if (! empty($data['group_key']) && $data['group_key'] !== $config->group_key) {
-            $this->configModel->where('group_key', $data['group_key'])
+        if ($request->group_key !== null && $request->group_key !== $config->group_key) {
+            $this->configModel->where('group_key', $request->group_key)
                 ->where('id', '!=', $id)->exists()
                 && paramError('配置分组键已存在');
         }
 
-        $updateData = array_filter([
-            'group_key' => $data['group_key'] ?? null,
-            'group_name' => $data['group_name'] ?? null,
-            'config_data' => $data['config_data'] ?? null,
-            'remark' => $data['remark'] ?? null,
-            'status' => $data['status'] ?? null,
-        ], fn ($v) => $v !== null);
+        // 更新后 group_key 可能已变成新值，旧 key 的缓存必须用改前的值清
+        $oldGroupKey = $config->group_key;
 
-        $config->update($updateData);
+        $config->update($request->toDbArrayFiltered());
 
-        $this->cache->delete(CacheKeys::config($config->group_key));
+        $this->cache->delete(CacheKeys::config($oldGroupKey));
+        $config->refresh();
+        if ($config->group_key !== $oldGroupKey) {
+            $this->cache->delete(CacheKeys::config($config->group_key));
+        }
 
-        return $config->fresh()->toArray();
+        return $config->toArray();
     }
 }

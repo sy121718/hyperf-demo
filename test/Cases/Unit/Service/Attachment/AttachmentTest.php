@@ -85,7 +85,7 @@ class AttachmentTest extends TestCase
         $attachment->shouldReceive('delete')->once()->andReturn(true);
 
         $model = Mockery::mock(SysAttachmentModel::class);
-        $model->shouldReceive('find')->with(1)->andReturn($attachment);
+        $model->shouldReceive('findOrNotFound')->with(1, '附件')->andReturn($attachment);
 
         $this->assertTrue((new Delete($model))->handle(1));
     }
@@ -93,9 +93,11 @@ class AttachmentTest extends TestCase
     public function testDeleteNotFound(): void
     {
         $model = Mockery::mock(SysAttachmentModel::class);
-        $model->shouldReceive('find')->with(999)->andReturn(null);
+        $model->shouldReceive('findOrNotFound')
+            ->andThrow(new BusinessException(404, '附件不存在'));
 
         $this->expectException(BusinessException::class);
+        $this->expectExceptionCode(404);
         (new Delete($model))->handle(999);
     }
 

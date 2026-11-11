@@ -23,11 +23,7 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        requireId($id, '角色');
-
-        $role = $this->roleModel->find($id);
-
-        ! $role && notFound('角色');
+        $role = $this->roleModel->findOrNotFound($id, '角色');
 
         return $role->toArray();
     }

@@ -23,10 +23,7 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        requireId($id, '会话');
-
-        $session = $this->sessionModel->with(['admin:id,username,name'])->find($id);
-        ! $session && notFound('会话');
+        $session = $this->sessionModel->findOrNotFound($id, '会话', ['admin:id,username,name']);
 
         return $session->toArray();
     }

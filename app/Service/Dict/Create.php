@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Dict;
 
 use App\Common\CacheKeys;
+use App\Dto\Dict\DictRequest;
 use App\Model\System\SysDictModel;
 
 class Create
@@ -22,26 +23,21 @@ class Create
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(DictRequest $request): array
     {
-        $dictName = $data['dict_name'] ?? '';
-        $dictCode = $data['dict_code'] ?? '';
-
-        empty($dictName) && paramError('字典名称不能为空');
-        empty($dictCode) && paramError('字典编码不能为空');
+        $dictCode = (string) $request->dict_code;
 
         $this->dictModel->where('dict_code', $dictCode)->exists()
             && paramError('字典编码已存在');
 
-        $dict = $this->dictModel->create([
-            'dict_name' => $dictName,
-            'dict_code' => $dictCode,
-            'dict_type' => $data['dict_type'] ?? 'default',
-            'status' => $data['status'] ?? 1,
-        ]);
+        $dbData = $request->toDbArrayFiltered();
+        $dbData['dict_type'] ??= 'default';
+        $dbData['status'] ??= 1;
+
+        $dict = $this->dictModel->create($dbData);
 
         CacheKeys::flush(CacheKeys::DICT_TREE);
 
-        return ['id' => $dict->id, 'dict_code' => $dictCode];
+        return $dict->toArray();
     }
 }

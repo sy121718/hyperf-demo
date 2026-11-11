@@ -133,6 +133,55 @@ abstract class BaseModel extends Model
         });
     }
 
+    /**
+     * 按主键取出模型，ID 非法或记录不存在时直接抛业务异常。
+     *
+     * 收敛 Action 中重复的「requireId + find + notFound」三段式样板。
+     * 只管单表取值，事务、缓存失效、状态判断等业务逻辑仍留在 Action。
+     *
+     * @param mixed $id 主键，允许字符串形式的数字
+     * @param string $entity 资源名称，用于拼装「XXX不存在」
+     * @param array $with 需要预加载的关联，如 ['roles', 'sessions']
+     */
+    public function findOrNotFound(mixed $id, string $entity, array $with = []): static
+    {
+        requireId($id, $entity);
+
+        $query = $this->newQuery();
+        if (! empty($with)) {
+            $query->with($with);
+        }
+
+        $record = $query->find((int) $id);
+        ! $record && notFound($entity);
+
+        return $record;
+    }
+
+    /**
+     * 按业务唯一键取出模型，不存在时直接抛业务异常。
+     *
+     * 用于 role_code / admin_code 这类非主键查找，只支持等值条件。
+     *
+     * @param array<string, mixed> $conditions 等值条件，如 ['role_code' => 'admin']
+     */
+    public function firstOrNotFound(array $conditions, string $entity, array $with = []): static
+    {
+        $query = $this->newQuery();
+        if (! empty($with)) {
+            $query->with($with);
+        }
+
+        foreach ($conditions as $field => $value) {
+            $query->where($field, $value);
+        }
+
+        $record = $query->first();
+        ! $record && notFound($entity);
+
+        return $record;
+    }
+
     public function isFieldUnique(array $conditions, ?int $excludeId = null): bool
     {
         return FieldUniquenessChecker::isUnique($this, $conditions, $excludeId);

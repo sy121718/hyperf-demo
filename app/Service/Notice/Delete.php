@@ -31,8 +31,7 @@ class Delete
     {
         Db::beginTransaction();
         try {
-            $notice = $this->noticeModel->find($id);
-            ! $notice && notFound('通知');
+            $notice = $this->noticeModel->findOrNotFound($id, '通知');
 
             $notice->status == 1 && paramError('已发布的通知不能删除');
 

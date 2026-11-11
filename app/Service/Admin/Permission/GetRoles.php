@@ -23,8 +23,7 @@ class GetRoles
 
     public function handle(int $id): array
     {
-        $admin = $this->adminModel->find($id);
-        ! $admin && notFound('管理员');
+        $admin = $this->adminModel->findOrNotFound($id, '管理员');
 
         $roles = $admin->roles()->get()->toArray();
 

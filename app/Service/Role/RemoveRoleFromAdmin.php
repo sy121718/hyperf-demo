@@ -29,14 +29,9 @@ class RemoveRoleFromAdmin
         $adminId = (int) ($data['admin_id'] ?? 0);
         $roleId = (int) ($data['role_id'] ?? 0);
 
-        requireId($adminId, '管理员');
-        requireId($roleId, '角色');
+        $admin = $this->adminModel->findOrNotFound($adminId, '管理员');
 
-        $admin = $this->adminModel->find($adminId);
-        ! $admin && notFound('管理员');
-
-        $role = $this->roleModel->find($roleId);
-        ! $role && notFound('角色');
+        $role = $this->roleModel->findOrNotFound($roleId, '角色');
 
         $admin->roles()->detach($roleId);
 

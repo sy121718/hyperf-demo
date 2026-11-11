@@ -28,8 +28,7 @@ class Update
     public function handle(MenuRequest $request): array
     {
         $id = (int) $request->id;
-        $menu = $this->menuModel->find($id);
-        ! $menu && notFound('菜单');
+        $menu = $this->menuModel->findOrNotFound($id, '菜单');
 
         if ($request->menu_code && $request->menu_code !== $menu->menu_code) {
             ! $this->menuModel->isFieldUnique(['menu_code' => $request->menu_code], $id)
