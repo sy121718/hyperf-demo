@@ -21,6 +21,16 @@ use App\Service\Email\Send\Send;
 use App\Service\Email\Send\Test as TestSend;
 use App\Service\Email\Template\Create;
 use App\Service\Email\Template\Delete;
+use FastRoute\Dispatcher;
+use Hyperf\Context\Context;
+use Hyperf\Context\RequestContext;
+use Hyperf\Context\ResponseContext;
+use Hyperf\Contract\ValidatorInterface;
+use Hyperf\HttpMessage\Server\Request as PsrRequest;
+use Hyperf\HttpMessage\Server\Response as PsrResponse;
+use Hyperf\HttpServer\Router\Dispatched;
+use Hyperf\HttpServer\Router\Handler;
+use Hyperf\Validation\ValidationException;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 use stdClass;
@@ -163,5 +173,65 @@ class EmailTest extends TestCase
     public function testTestSendSuccess(): void
     {
         $this->assertTrue((new TestSend())->handle(EmailRequest::fromArray(['to' => 'test@example.com'])));
+    }
+
+    // ==================== 模板创建必填校验 ====================
+
+    public function testTemplateCreateRequiresSubjectAndContent(): void
+    {
+        // email_template 里 subject/content 是 NOT NULL 且无默认值，
+        // 放过去会直接 500，必须在 DTO 层就拦住
+        $request = $this->makeTemplateCreateRequest([
+            'template_name' => '测试模板',
+            'template_code' => 'tpl',
+        ]);
+
+        $this->expectException(ValidationException::class);
+        $request->validateResolved();
+    }
+
+    public function testTemplateCreatePassesWithSubjectAndContent(): void
+    {
+        $request = $this->makeTemplateCreateRequest([
+            'template_name' => '测试模板',
+            'template_code' => 'tpl',
+            'subject' => '标题',
+            'content' => '<p>正文</p>',
+        ]);
+
+        $request->validateResolved();
+
+        $this->assertSame('标题', $request->subject);
+        $this->assertSame('<p>正文</p>', $request->content);
+    }
+
+    /**
+     * 按 templateCreate 场景构造带路由上下文的 DTO.
+     *
+     * @param array<string, mixed> $body
+     */
+    private function makeTemplateCreateRequest(array $body): EmailRequest
+    {
+        ResponseContext::set(new PsrResponse());
+
+        $action = 'templateCreate';
+        $psrRequest = (new PsrRequest('POST', '/api/email/template/create'))->withParsedBody($body);
+        $psrRequest = $psrRequest->withAttribute(
+            Dispatched::class,
+            new Dispatched([
+                Dispatcher::FOUND,
+                new Handler('App\Controller\Notify\EmailController@' . $action, '/api/email/template/create'),
+                [],
+            ])
+        );
+        RequestContext::set($psrRequest);
+
+        /** @var EmailRequest $dto */
+        $dto = container()->get(EmailRequest::class);
+        // 同一个容器单例会被复用，校验器和已解析入参都要清掉，否则命中上一条用例
+        $dto->clearStoredParsedData();
+        Context::destroy(spl_object_hash($dto) . ':' . ValidatorInterface::class);
+
+        return $dto;
     }
 }

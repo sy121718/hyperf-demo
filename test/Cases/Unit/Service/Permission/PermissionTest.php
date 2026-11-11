@@ -15,6 +15,8 @@ namespace HyperfTest\Cases\Unit\Service\Permission;
 use App\Dto\Permission\PermissionRequest;
 use App\Exception\BusinessException;
 use App\Model\Rbac\SysPermissionDictModel;
+use App\Service\Permission\BatchCreate;
+use App\Service\Permission\BatchUpdate;
 use App\Service\Permission\Create;
 use App\Service\Permission\Delete;
 use App\Service\Permission\GetInfo;
@@ -230,5 +232,96 @@ class PermissionTest extends TestCase
         $this->expectExceptionMessage('权限ID不能为空');
 
         (new GetInfo($model))->handle(0);
+    }
+
+    // ==================== 批量创建 / 批量更新 ====================
+
+    public function testBatchCreateWritesEachItemIndependently(): void
+    {
+        // 批量接口会把 items 逐条转成 DTO，各条必须带自己的数据。
+        // 曾经因为 DTO 数据存在共享的协程上下文里，3 条全部写成了最后一条。
+        $captured = [];
+        $model = Mockery::mock(SysPermissionDictModel::class);
+        $model->shouldReceive('where->exists')->andReturn(false);
+        $model->shouldReceive('create')->andReturnUsing(
+            static function (array $data) use (&$captured) {
+                $captured[] = $data;
+                return Mockery::mock(stdClass::class);
+            }
+        );
+
+        $items = [
+            PermissionRequest::fromArray(['perm_code' => 'probe:a', 'perm_name' => '探针A']),
+            PermissionRequest::fromArray(['perm_code' => 'probe:b', 'perm_name' => '探针B']),
+            PermissionRequest::fromArray(['perm_code' => 'probe:c', 'perm_name' => '探针C']),
+        ];
+
+        $result = (new BatchCreate($model))->handle($items);
+
+        $this->assertSame(3, $result['created_count']);
+        $this->assertSame(['probe:a', 'probe:b', 'probe:c'], array_column($captured, 'perm_code'));
+        $this->assertSame(['探针A', '探针B', '探针C'], array_column($captured, 'perm_name'));
+    }
+
+    public function testBatchCreateSkipsExistingCodes(): void
+    {
+        $model = Mockery::mock(SysPermissionDictModel::class);
+        $model->shouldReceive('where->exists')->andReturn(true);
+        $model->shouldReceive('create')->never();
+
+        $result = (new BatchCreate($model))->handle([
+            PermissionRequest::fromArray(['perm_code' => 'dup:a', 'perm_name' => '重复A']),
+        ]);
+
+        $this->assertSame(0, $result['created_count']);
+        $this->assertSame(['dup:a'], $result['skipped_codes']);
+    }
+
+    public function testBatchCreateRejectsEmptyItems(): void
+    {
+        $model = Mockery::mock(SysPermissionDictModel::class);
+
+        $this->expectException(BusinessException::class);
+        $this->expectExceptionMessage('权限数据不能为空');
+
+        (new BatchCreate($model))->handle([]);
+    }
+
+    public function testBatchUpdateAppliesEachItemToItsOwnRecord(): void
+    {
+        // 每条 item 必须更新到自己的 id 上，不能全部落到同一条记录
+        $updated = [];
+
+        $makeRecord = static function (int $id, string $code) use (&$updated): Mockery\MockInterface {
+            $record = Mockery::mock(SysPermissionDictModel::class)->makePartial();
+            $record->id = $id;
+            $record->perm_code = $code;
+            $record->shouldReceive('update')->once()->andReturnUsing(
+                static function (array $data) use (&$updated, $id): bool {
+                    $updated[$id] = $data;
+                    return true;
+                }
+            );
+            return $record;
+        };
+
+        $records = [
+            217 => $makeRecord(217, 'probe:a'),
+            218 => $makeRecord(218, 'probe:b'),
+        ];
+
+        $model = Mockery::mock(SysPermissionDictModel::class);
+        $model->shouldReceive('find')->andReturnUsing(
+            static fn (int $id) => $records[$id] ?? null
+        );
+
+        $result = (new BatchUpdate($model))->handle([
+            PermissionRequest::fromArray(['id' => 217, 'perm_name' => '探针A改']),
+            PermissionRequest::fromArray(['id' => 218, 'perm_name' => '探针B改']),
+        ]);
+
+        $this->assertSame(2, $result['updated_count']);
+        $this->assertSame(['perm_name' => '探针A改'], $updated[217]);
+        $this->assertSame(['perm_name' => '探针B改'], $updated[218]);
     }
 }
