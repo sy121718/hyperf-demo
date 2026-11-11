@@ -35,6 +35,10 @@ return [
         ],
     ],
     'settings' => [
+        // 仅将两站点的资源目录交给 Swoole，避免暴露 public/dist 等本地文件。
+        Constant::OPTION_DOCUMENT_ROOT => BASE_PATH . '/public',
+        Constant::OPTION_ENABLE_STATIC_HANDLER => true,
+        Constant::OPTION_STATIC_HANDLER_LOCATIONS => ['/assets/', '/admin/assets/'],
         Constant::OPTION_ENABLE_COROUTINE => true,
         Constant::OPTION_WORKER_NUM => swoole_cpu_num(),
         Constant::OPTION_PID_FILE => BASE_PATH . '/runtime/hyperf.pid',

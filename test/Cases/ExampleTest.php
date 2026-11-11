@@ -20,8 +20,9 @@ use Hyperf\Testing\TestCase;
  */
 class ExampleTest extends TestCase
 {
-    public function testExample()
+    public function testUnauthenticatedProfile(): void
     {
-        $this->get('/')->assertOk()->assertSee('Hyperf');
+        // 根路径已交给前端，后端冒烟测试不应依赖是否已构建静态页面。
+        $this->get('/api/auth/profile')->assertOk()->assertSee('TOKEN_MISSING');
     }
 }

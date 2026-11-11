@@ -10,10 +10,12 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 use App\Middleware\CorsMiddleware;
+use App\Middleware\FrontendMiddleware;
 use Hyperf\Validation\Middleware\ValidationMiddleware;
 
 return [
     'http' => [
+        FrontendMiddleware::class,
         // 必须启用：FormRequest/DTO 的 validateResolved() 依赖它触发，
         // 否则 required 等“字段缺失”规则永远不会生效
         ValidationMiddleware::class,

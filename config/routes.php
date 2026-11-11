@@ -17,10 +17,6 @@ Router::get('/favicon.ico', function () {
     return '';
 });
 
-Router::get('/', function () {
-    return ['success' => true, 'message' => 'Hyperf RBAC API'];
-});
-
 // ==================== 公开路由（无需认证） ====================
 Router::addGroup('/api/', function () {
     Router::post('auth/login', 'App\Controller\System\AuthController@login');
