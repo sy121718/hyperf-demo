@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Role;
 
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 
 class GetInfo
 {
@@ -23,11 +23,11 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        $id > 0 || paramError('角色ID不能为空');
+        requireId($id, '角色');
 
         $role = $this->roleModel->find($id);
 
-        ! $role && paramError('角色不存在', 404);
+        ! $role && notFound('角色');
 
         return $role->toArray();
     }

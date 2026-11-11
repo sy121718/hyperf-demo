@@ -10,38 +10,37 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace App\Model\Config;
+namespace App\Model\Attachment;
 
 use App\Common\Model\BaseModel;
 
-class SysConfigModel extends BaseModel
+class SysFileCategoryModel extends BaseModel
 {
-    protected ?string $table = 'sys_config';
-
-    protected ?string $dateFormat = 'Y-m-d H:i:s.v';
+    protected ?string $table = 'sys_file_category';
 
     protected array $fillable = [
-        'group_key', 'group_name', 'config_data', 'remark',
-        'status', 'create_by', 'update_by',
+        'category_name', 'category_code', 'parent_id', 'sort_order',
+        'icon', 'status', 'create_by', 'update_by',
     ];
 
     protected array $casts = [
         'id' => 'integer',
-        'config_data' => 'json',
+        'parent_id' => 'integer',
+        'sort_order' => 'integer',
         'status' => 'integer',
         'create_by' => 'integer',
         'update_by' => 'integer',
     ];
 
     protected array $whereableFields = [
-        'group_key', 'group_name', 'status',
+        'parent_id', 'status',
     ];
 
     protected array $searchableFields = [
-        'group_key', 'group_name', 'remark',
+        'category_name', 'category_code',
     ];
 
     protected array $orderableFields = [
-        'id', 'create_time', 'update_time',
+        'id', 'category_name', 'sort_order', 'status', 'create_time', 'update_time',
     ];
 }

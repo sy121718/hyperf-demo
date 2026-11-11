@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Send;
 
-use App\Model\Email\EmailSendRecipientModel;
-use App\Model\Email\EmailSendRecordModel;
+use App\Model\Notify\EmailSendRecipientModel;
+use App\Model\Notify\EmailSendRecordModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 

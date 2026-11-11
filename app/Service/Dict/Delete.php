@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Dict;
 
 use App\Common\CacheKeys;
-use App\Model\Dict\SysDictModel;
+use App\Model\System\SysDictModel;
 
 class Delete
 {
@@ -24,10 +24,10 @@ class Delete
 
     public function handle(int $id): bool
     {
-        $id > 0 || paramError('字典ID不能为空');
+        requireId($id, '字典');
 
         $dict = $this->dictModel->find($id);
-        ! $dict && paramError('字典不存在', 404);
+        ! $dict && notFound('字典');
 
         $dict->delete();
 

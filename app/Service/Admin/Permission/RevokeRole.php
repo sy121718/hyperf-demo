@@ -14,7 +14,7 @@ namespace App\Service\Admin\Permission;
 
 use App\Common\CacheKeys;
 use App\Model\Admin\SysAdminModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -33,7 +33,7 @@ class RevokeRole
         $adminId = (int) ($data['admin_id'] ?? 0);
         $roleIds = $data['role_ids'] ?? [];
 
-        $adminId > 0 || paramError('管理员ID不能为空');
+        requireId($adminId, '管理员');
         ! empty($roleIds) && is_array($roleIds) || paramError('角色ID不能为空');
 
         [$admin, $roles] = parallel([
@@ -41,7 +41,7 @@ class RevokeRole
             fn () => $this->roleModel->whereIn('id', $roleIds)->get(),
         ]);
 
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
         $roles->count() === count($roleIds) || paramError('部分角色不存在');
 
         $currentRoleIds = $admin->roles->pluck('id')->toArray();

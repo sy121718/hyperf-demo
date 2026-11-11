@@ -25,10 +25,10 @@ class KickUser
 
     public function handle(int $userId): void
     {
-        $userId > 0 || paramError('用户ID不能为空');
+        requireId($userId, '用户');
 
         $admin = $this->adminModel->find($userId);
-        ! $admin && paramError('用户不存在', 404);
+        ! $admin && notFound('用户');
 
         $this->sessionsModel
             ->where('admin_id', $userId)

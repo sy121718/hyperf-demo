@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace HyperfTest\Cases\Unit\Service\Config;
 
 use App\Exception\BusinessException;
-use App\Model\Config\SysConfigModel;
+use App\Model\System\SysConfigModel;
 use App\Service\Config\Create;
 use App\Service\Config\Delete;
 use App\Service\Config\Get;

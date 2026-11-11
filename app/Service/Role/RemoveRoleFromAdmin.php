@@ -14,7 +14,7 @@ namespace App\Service\Role;
 
 use App\Common\CacheKeys;
 use App\Model\Admin\SysAdminModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 
 class RemoveRoleFromAdmin
 {
@@ -29,14 +29,14 @@ class RemoveRoleFromAdmin
         $adminId = (int) ($data['admin_id'] ?? 0);
         $roleId = (int) ($data['role_id'] ?? 0);
 
-        $adminId > 0 || paramError('管理员ID不能为空');
-        $roleId > 0 || paramError('角色ID不能为空');
+        requireId($adminId, '管理员');
+        requireId($roleId, '角色');
 
         $admin = $this->adminModel->find($adminId);
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
 
         $role = $this->roleModel->find($roleId);
-        ! $role && paramError('角色不存在', 404);
+        ! $role && notFound('角色');
 
         $admin->roles()->detach($roleId);
 

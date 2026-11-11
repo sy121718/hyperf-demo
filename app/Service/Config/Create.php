@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Config;
 
-use App\Model\Config\SysConfigModel;
+use App\Model\System\SysConfigModel;
 
 class Create
 {

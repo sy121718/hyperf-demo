@@ -14,7 +14,7 @@ namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
 use App\Dto\Permission\PermissionRequest;
-use App\Model\Permission\SysPermissionDictModel;
+use App\Model\Rbac\SysPermissionDictModel;
 
 class Update
 {
@@ -27,7 +27,7 @@ class Update
     {
         $id = (int) $request->id;
         $permission = $this->permissionModel->find($id);
-        ! $permission && paramError('权限不存在', 404);
+        ! $permission && notFound('权限');
 
         if ($request->perm_code && $request->perm_code !== $permission->perm_code) {
             ! $this->permissionModel->isFieldUnique(['perm_code' => $request->perm_code], $id)

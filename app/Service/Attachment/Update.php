@@ -14,7 +14,7 @@ namespace App\Service\Attachment;
 
 use App\Dto\Attachment\AttachmentRequest;
 use App\Model\Attachment\SysAttachmentModel;
-use App\Model\FileCategory\SysFileCategoryModel;
+use App\Model\Attachment\SysFileCategoryModel;
 
 class Update
 {
@@ -27,11 +27,11 @@ class Update
     {
         $id = (int) $request->id;
         $attachment = $this->attachmentModel->find($id);
-        ! $attachment && paramError('附件不存在', 404);
+        ! $attachment && notFound('附件');
 
         if ($request->category_id !== null && $request->category_id > 0) {
             ! SysFileCategoryModel::where('id', $request->category_id)->exists()
-                && paramError('文件分类不存在');
+                && notFound('文件分类');
         }
 
         $attachment->update($request->toDbArrayFiltered());

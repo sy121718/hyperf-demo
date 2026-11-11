@@ -14,7 +14,7 @@ namespace HyperfTest\Cases\Unit\Service\Permission;
 
 use App\Dto\Permission\PermissionRequest;
 use App\Exception\BusinessException;
-use App\Model\Permission\SysPermissionDictModel;
+use App\Model\Rbac\SysPermissionDictModel;
 use App\Service\Permission\Create;
 use App\Service\Permission\Delete;
 use App\Service\Permission\GetInfo;

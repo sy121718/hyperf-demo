@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\IpBlacklist;
 
 use App\Common\CacheKeys;
-use App\Model\IpBlacklist\IpBlacklistModel;
+use App\Model\System\IpBlacklistModel;
 use Psr\SimpleCache\CacheInterface;
 
 class CheckIp

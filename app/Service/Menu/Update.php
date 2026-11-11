@@ -14,7 +14,7 @@ namespace App\Service\Menu;
 
 use App\Common\CacheKeys;
 use App\Dto\Menu\MenuRequest;
-use App\Model\Menu\SysMenuModel;
+use App\Model\Rbac\SysMenuModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -29,7 +29,7 @@ class Update
     {
         $id = (int) $request->id;
         $menu = $this->menuModel->find($id);
-        ! $menu && paramError('菜单不存在', 404);
+        ! $menu && notFound('菜单');
 
         if ($request->menu_code && $request->menu_code !== $menu->menu_code) {
             ! $this->menuModel->isFieldUnique(['menu_code' => $request->menu_code], $id)

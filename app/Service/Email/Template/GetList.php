@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Template;
 
-use App\Model\Email\EmailTemplateModel;
+use App\Model\Notify\EmailTemplateModel;
 
 class GetList
 {

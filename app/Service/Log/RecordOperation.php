@@ -12,14 +12,14 @@ declare(strict_types=1);
 
 namespace App\Service\Log;
 
-use App\Model\Log\SysOperationLogsModel;
+use App\Model\Admin\SysOperationLogModel;
 use Hyperf\Context\Context;
 use Psr\Http\Message\ServerRequestInterface;
 
 class RecordOperation
 {
     public function __construct(
-        protected SysOperationLogsModel $logModel,
+        protected SysOperationLogModel $logModel,
     ) {
     }
 

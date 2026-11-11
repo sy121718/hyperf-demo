@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
-use App\Model\Permission\SysPermissionDictModel;
+use App\Model\Rbac\SysPermissionDictModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -27,10 +27,10 @@ class Delete
     public function handle(array $data): bool
     {
         $id = (int) ($data['id'] ?? 0);
-        $id > 0 || paramError('权限ID不能为空');
+        requireId($id, '权限');
 
         $permission = $this->permissionModel->find($id);
-        ! $permission && paramError('权限不存在', 404);
+        ! $permission && notFound('权限');
 
         Db::beginTransaction();
         try {

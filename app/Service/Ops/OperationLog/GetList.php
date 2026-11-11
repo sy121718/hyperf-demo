@@ -12,12 +12,12 @@ declare(strict_types=1);
 
 namespace App\Service\Ops\OperationLog;
 
-use App\Model\Log\SysOperationLogsModel;
+use App\Model\Admin\SysOperationLogModel;
 
 class GetList
 {
     public function __construct(
-        protected SysOperationLogsModel $operationLogModel,
+        protected SysOperationLogModel $operationLogModel,
     ) {
     }
 

@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace HyperfTest\Cases\Unit\Service\Dict;
 
 use App\Exception\BusinessException;
-use App\Model\Dict\SysDictModel;
+use App\Model\System\SysDictModel;
 use App\Service\Dict\Create;
 use App\Service\Dict\Delete;
 use App\Service\Dict\GetInfo;

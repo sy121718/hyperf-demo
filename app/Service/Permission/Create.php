@@ -14,7 +14,7 @@ namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
 use App\Dto\Permission\PermissionRequest;
-use App\Model\Permission\SysPermissionDictModel;
+use App\Model\Rbac\SysPermissionDictModel;
 
 class Create
 {

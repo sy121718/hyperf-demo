@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Menu;
 
-use App\Model\Menu\SysMenuModel;
+use App\Model\Rbac\SysMenuModel;
 
 class GetInfo
 {
@@ -23,11 +23,11 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        $id > 0 || paramError('菜单ID不能为空');
+        requireId($id, '菜单');
 
         $menu = $this->menuModel->find($id);
 
-        ! $menu && paramError('菜单不存在', 404);
+        ! $menu && notFound('菜单');
 
         return $menu->toArray();
     }

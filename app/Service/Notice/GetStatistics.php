@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
-use App\Model\Notice\NoticeModel;
+use App\Model\Notify\NoticeModel;
 use Hyperf\DbConnection\Db;
 
 use function Hyperf\Coroutine\parallel;

@@ -30,7 +30,8 @@ class DbQueryExecutedListener implements ListenerInterface
 
     public function __construct(ContainerInterface $container)
     {
-        $this->logger = $container->get(LoggerFactory::class)->get('sql');
+        // 第二个参数才是通道名，只传 'sql' 会当成 logger 名称、通道仍走 default
+        $this->logger = $container->get(LoggerFactory::class)->get('sql', 'sql');
     }
 
     public function listen(): array

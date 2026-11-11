@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace App\Model\Notice;
+namespace App\Model\Notify;
 
 use App\Common\Model\BaseModel;
 use App\Model\Admin\SysAdminModel;

@@ -24,7 +24,7 @@ class GetInfo
     public function handle(int $id): array
     {
         $job = $this->cronJobModel->find($id);
-        ! $job && paramError('任务不存在');
+        ! $job && notFound('任务');
 
         return $job->toArray();
     }

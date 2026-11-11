@@ -27,7 +27,7 @@ class UpdateProfile
         $userId > 0 || paramError('用户未登录', 401);
 
         $admin = $this->adminModel->find($userId);
-        ! $admin && paramError('用户不存在', 404);
+        ! $admin && notFound('用户');
 
         if (isset($data['email']) && $data['email'] !== $admin->email) {
             $this->adminModel->where('email', $data['email'])

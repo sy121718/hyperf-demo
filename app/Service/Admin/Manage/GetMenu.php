@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Admin\Manage;
 
 use App\Common\CacheKeys;
-use App\Model\Menu\SysMenuModel;
+use App\Model\Rbac\SysMenuModel;
 use Hyperf\DbConnection\Db;
 use Psr\SimpleCache\CacheInterface;
 

@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Config;
 
 use App\Common\CacheKeys;
-use App\Model\Config\SysConfigModel;
+use App\Model\System\SysConfigModel;
 use Psr\SimpleCache\CacheInterface;
 
 class Get

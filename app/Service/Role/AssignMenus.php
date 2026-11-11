@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Role;
 
 use App\Common\CacheKeys;
-use App\Model\Menu\SysMenuModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysMenuModel;
+use App\Model\Rbac\SysRoleModel;
 
 class AssignMenus
 {
@@ -29,7 +29,7 @@ class AssignMenus
         ! empty($roleCode) || paramError('角色标识不能为空');
 
         $role = $this->roleModel->where('role_code', $roleCode)->first();
-        ! $role && paramError('角色不存在', 404);
+        ! $role && notFound('角色');
 
         // 获取菜单的 permission_code（目录类型没有 permission_code）
         $permissionCodes = [];

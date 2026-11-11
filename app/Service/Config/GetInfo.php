@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Config;
 
-use App\Model\Config\SysConfigModel;
+use App\Model\System\SysConfigModel;
 
 class GetInfo
 {
@@ -23,10 +23,10 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        $id > 0 || paramError('配置ID不能为空');
+        requireId($id, '配置');
 
         $config = $this->configModel->find($id);
-        ! $config && paramError('配置不存在', 404);
+        ! $config && notFound('配置');
 
         return $config->toArray();
     }

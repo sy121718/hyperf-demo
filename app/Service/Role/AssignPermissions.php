@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Role;
 
 use App\Common\CacheKeys;
-use App\Model\Permission\SysPermissionDictModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysPermissionDictModel;
+use App\Model\Rbac\SysRoleModel;
 
 class AssignPermissions
 {
@@ -29,7 +29,7 @@ class AssignPermissions
         ! empty($roleCode) || paramError('角色标识不能为空');
 
         $role = $this->roleModel->where('role_code', $roleCode)->first();
-        ! $role && paramError('角色不存在', 404);
+        ! $role && notFound('角色');
 
         if (! empty($permissionCodes)) {
             $exists = $this->permissionModel

@@ -26,7 +26,7 @@ class Update
     {
         $id = (int) $request->id;
         $job = $this->cronJobModel->find($id);
-        ! $job && paramError('任务不存在', 404);
+        ! $job && notFound('任务');
 
         $job->update($request->toDbArrayFiltered());
 

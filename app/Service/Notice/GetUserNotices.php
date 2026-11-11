@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
-use App\Model\Notice\NoticeModel;
-use App\Model\Notice\NoticeReadModel;
+use App\Model\Notify\NoticeModel;
+use App\Model\Notify\NoticeReadModel;
 use Hyperf\Contract\LengthAwarePaginatorInterface;
 
 class GetUserNotices

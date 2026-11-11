@@ -24,7 +24,7 @@ class Delete
     public function handle(int $id): bool
     {
         $attachment = $this->attachmentModel->find($id);
-        ! $attachment && paramError('附件不存在');
+        ! $attachment && notFound('附件');
 
         $attachment->delete();
 

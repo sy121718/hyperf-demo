@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
-use App\Model\Notice\NoticeModel;
-use App\Model\Notice\NoticeReadModel;
+use App\Model\Notify\NoticeModel;
+use App\Model\Notify\NoticeReadModel;
 
 class MarkRead
 {
@@ -28,7 +28,7 @@ class MarkRead
         $noticeId = (int) ($data['notice_id'] ?? 0);
         $userId = (int) ($data['user_id'] ?? 0);
 
-        $userId > 0 || paramError('用户ID不能为空');
+        requireId($userId, '用户');
 
         $exists = $this->readModel
             ->where('notice_id', $noticeId)

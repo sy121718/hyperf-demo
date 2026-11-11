@@ -15,6 +15,7 @@ namespace App\Exception\Handler;
 use App\Exception\BusinessException;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\ExceptionHandler\ExceptionHandler;
+use Hyperf\HttpMessage\Exception\HttpException;
 use Hyperf\HttpMessage\Stream\SwooleStream;
 use Hyperf\Validation\ValidationException;
 use InvalidArgumentException;
@@ -34,6 +35,8 @@ class AppExceptionHandler extends ExceptionHandler
         $code = 500;
         $message = '服务器内部错误';
         $data = null;
+        // 业务异常的 HTTP 状态仍为 200（前端按 body.code 判定），路由级异常才改真实状态码
+        $httpStatus = 200;
 
         if ($throwable instanceof BusinessException) {
             $code = $throwable->getCode() ?: 400;
@@ -45,6 +48,14 @@ class AppExceptionHandler extends ExceptionHandler
         } elseif ($throwable instanceof InvalidArgumentException) {
             $code = $throwable->getCode() ?: 400;
             $message = $throwable->getMessage();
+        } elseif ($throwable instanceof HttpException) {
+            // 路由未命中 / 方法不允许，需返回真实 HTTP 状态，否则调用方无法区分
+            $httpStatus = $code = $throwable->getStatusCode();
+            $message = match ($code) {
+                404 => '请求的资源不存在',
+                405 => '请求方法不允许',
+                default => $throwable->getMessage() ?: '请求异常',
+            };
         } else {
             $this->logger->error(sprintf('%s[%s] in %s', $throwable->getMessage(), $throwable->getLine(), $throwable->getFile()));
             $this->logger->error($throwable->getTraceAsString());
@@ -59,7 +70,7 @@ class AppExceptionHandler extends ExceptionHandler
 
         return $response
             ->withHeader('Content-Type', 'application/json; charset=utf-8')
-            ->withStatus(200)
+            ->withStatus($httpStatus)
             ->withBody(new SwooleStream($body));
     }
 

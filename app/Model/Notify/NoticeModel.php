@@ -10,39 +10,55 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace App\Model\Email;
+namespace App\Model\Notify;
 
 use App\Common\Model\BaseModel;
 use App\Model\Admin\SysAdminModel;
 
-class EmailTemplateModel extends BaseModel
+class NoticeModel extends BaseModel
 {
-    protected ?string $table = 'email_template';
+    protected ?string $table = 'notice';
 
     protected array $fillable = [
-        'template_name', 'template_code', 'subject', 'content',
-        'template_type', 'variables', 'status', 'create_by', 'update_by',
+        'title', 'content', 'notice_type', 'is_top', 'is_popup',
+        'status', 'publish_time', 'expire_time', 'read_count',
+        'create_by', 'update_by',
     ];
 
     protected array $casts = [
         'id' => 'integer',
+        'notice_type' => 'integer',
+        'is_top' => 'integer',
+        'is_popup' => 'integer',
         'status' => 'integer',
-        'variables' => 'json',
+        'read_count' => 'integer',
         'create_by' => 'integer',
         'update_by' => 'integer',
     ];
 
     protected array $whereableFields = [
-        'status', 'template_type',
+        'notice_type', 'is_top', 'is_popup', 'status',
     ];
 
     protected array $searchableFields = [
-        'template_name', 'template_code', 'subject',
+        'title', 'content',
     ];
 
     protected array $orderableFields = [
-        'id', 'template_name', 'template_code', 'status', 'create_time', 'update_time',
+        'id', 'title', 'notice_type', 'is_top',
+        'read_count', 'status', 'publish_time', 'expire_time',
+        'create_time',
     ];
+
+    public function targets()
+    {
+        return $this->hasMany(NoticeTargetModel::class, 'notice_id', 'id');
+    }
+
+    public function readRecords()
+    {
+        return $this->hasMany(NoticeReadModel::class, 'notice_id', 'id');
+    }
 
     public function creator()
     {

@@ -14,7 +14,7 @@ namespace App\Service\Role;
 
 use App\Model\Admin\SysAdminModel;
 use App\Model\Admin\SysAdminRoleModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -36,7 +36,7 @@ class AssignRoles
     public function handle(int $adminId, array $roleIds): void
     {
         $admin = $this->adminModel->find($adminId);
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
 
         $adminCode = (string) $admin->admin_code;
 

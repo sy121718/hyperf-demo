@@ -27,7 +27,7 @@ class ChangePassword
         $userId > 0 || paramError('用户未登录', 401);
 
         $admin = $this->adminModel->find($userId);
-        ! $admin && paramError('用户不存在', 404);
+        ! $admin && notFound('用户');
 
         ! password_verify($oldPassword, $admin->password) && paramError('旧密码错误');
 

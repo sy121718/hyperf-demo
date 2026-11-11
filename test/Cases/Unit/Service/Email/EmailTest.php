@@ -13,9 +13,9 @@ declare(strict_types=1);
 namespace HyperfTest\Cases\Unit\Service\Email;
 
 use App\Exception\BusinessException;
-use App\Model\Email\EmailSendRecipientModel;
-use App\Model\Email\EmailSendRecordModel;
-use App\Model\Email\EmailTemplateModel;
+use App\Model\Notify\EmailSendRecipientModel;
+use App\Model\Notify\EmailSendRecordModel;
+use App\Model\Notify\EmailTemplateModel;
 use App\Service\Email\Send\Send;
 use App\Service\Email\Send\Test as TestSend;
 use App\Service\Email\Template\Create;

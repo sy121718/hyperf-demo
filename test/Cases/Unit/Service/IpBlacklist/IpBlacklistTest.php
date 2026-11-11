@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace HyperfTest\Cases\Unit\Service\IpBlacklist;
 
 use App\Exception\BusinessException;
-use App\Model\IpBlacklist\IpBlacklistModel;
+use App\Model\System\IpBlacklistModel;
 use App\Service\IpBlacklist\Ban;
 use App\Service\IpBlacklist\CheckIp;
 use App\Service\IpBlacklist\Unban;

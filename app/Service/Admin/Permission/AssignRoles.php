@@ -15,7 +15,7 @@ namespace App\Service\Admin\Permission;
 use App\Common\CacheKeys;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Admin\SysAdminRoleModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 
 class AssignRoles
 {
@@ -40,7 +40,7 @@ class AssignRoles
         ! empty($roleCodes) || paramError('角色标识不能为空');
 
         $admin = $this->adminModel->where('admin_code', $adminCode)->first();
-        ! $admin && paramError('管理员不存在');
+        ! $admin && notFound('管理员');
 
         if ($admin->is_admin == 1) {
             paramError('不能修改超级管理员的角色', 403);

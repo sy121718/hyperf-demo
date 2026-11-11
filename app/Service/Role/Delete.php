@@ -14,7 +14,7 @@ namespace App\Service\Role;
 
 use App\Common\CacheKeys;
 use App\Model\Admin\SysAdminRoleModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -29,10 +29,10 @@ class Delete
     public function handle(array $data): bool
     {
         $id = (int) ($data['id'] ?? 0);
-        $id > 0 || paramError('角色ID不能为空');
+        requireId($id, '角色');
 
         $role = $this->roleModel->find($id);
-        ! $role && paramError('角色不存在', 404);
+        ! $role && notFound('角色');
 
         $this->adminRoleModel->where('role_code', $role->role_code)->exists()
             && paramError('角色存在关联的用户，无法删除');

@@ -14,7 +14,7 @@ namespace App\Service\Menu;
 
 use App\Common\CacheKeys;
 use App\Dto\Menu\MenuRequest;
-use App\Model\Menu\SysMenuModel;
+use App\Model\Rbac\SysMenuModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 

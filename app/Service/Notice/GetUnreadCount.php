@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
-use App\Model\Notice\NoticeModel;
-use App\Model\Notice\NoticeReadModel;
+use App\Model\Notify\NoticeModel;
+use App\Model\Notify\NoticeReadModel;
 
 use function Hyperf\Coroutine\parallel;
 
@@ -27,7 +27,7 @@ class GetUnreadCount
 
     public function handle(int $userId): int
     {
-        $userId > 0 || paramError('用户ID不能为空');
+        requireId($userId, '用户');
 
         [$totalCount, $readCount] = parallel([
             fn () => $this->noticeModel

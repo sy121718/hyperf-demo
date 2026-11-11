@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Notice;
 
 use App\Dto\Notice\NoticeRequest;
-use App\Model\Notice\NoticeModel;
+use App\Model\Notify\NoticeModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 

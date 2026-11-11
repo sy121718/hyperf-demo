@@ -14,7 +14,7 @@ namespace App\Service\Role;
 
 use App\Common\CacheKeys;
 use App\Model\Admin\SysAdminModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -33,7 +33,7 @@ class AssignRolesToAdmin
         $adminId = (int) ($data['admin_id'] ?? 0);
         $roleIds = $data['role_ids'] ?? [];
 
-        $adminId > 0 || paramError('管理员ID不能为空');
+        requireId($adminId, '管理员');
         ! empty($roleIds) || paramError('角色ID不能为空');
 
         [$admin, $existCount] = parallel([
@@ -41,7 +41,7 @@ class AssignRolesToAdmin
             fn () => $this->roleModel->whereIn('id', $roleIds)->count(),
         ]);
 
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
         $existCount === count($roleIds) || paramError('部分角色不存在');
 
         Db::beginTransaction();

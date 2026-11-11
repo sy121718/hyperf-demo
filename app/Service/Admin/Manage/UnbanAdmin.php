@@ -24,10 +24,10 @@ class UnbanAdmin
     public function handle(array $data): void
     {
         $id = (int) ($data['id'] ?? 0);
-        $id > 0 || paramError('管理员ID不能为空');
+        requireId($id, '管理员');
 
         $admin = $this->adminModel->find($id);
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
 
         $admin->status = 1;
         $admin->login_failure_count = 0;

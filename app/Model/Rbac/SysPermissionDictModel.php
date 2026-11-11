@@ -10,50 +10,46 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace App\Model\Menu;
+namespace App\Model\Rbac;
 
 use App\Common\Model\BaseModel;
-use Hyperf\Database\Model\SoftDeletes;
 
-class SysMenuModel extends BaseModel
+class SysPermissionDictModel extends BaseModel
 {
-    use SoftDeletes;
+    public bool $timestamps = true;
 
-    protected const DELETED_AT = 'deleted_time';
-
-    protected ?string $table = 'sys_menus';
+    protected ?string $table = 'sys_permission_dict';
 
     protected ?string $dateFormat = 'Y-m-d H:i:s.v';
 
     protected array $fillable = [
-        'menu_code', 'menu_name', 'parent_id', 'type', 'title',
-        'path', 'component', 'external_url', 'icon', 'status',
-        'is_hidden', 'is_public', 'permission_code', 'sort_order',
+        'perm_name', 'perm_code', 'parent_id', 'api_path',
+        'http_method', 'controller_method', 'is_public',
+        'rate_limit', 'route_priority', 'remark', 'status',
         'create_by', 'update_by',
     ];
 
     protected array $casts = [
         'id' => 'integer',
         'parent_id' => 'integer',
-        'type' => 'integer',
-        'status' => 'integer',
-        'is_hidden' => 'integer',
         'is_public' => 'integer',
-        'sort_order' => 'integer',
+        'rate_limit' => 'integer',
+        'route_priority' => 'integer',
+        'status' => 'integer',
         'create_by' => 'integer',
         'update_by' => 'integer',
     ];
 
     protected array $whereableFields = [
-        'parent_id', 'type', 'status', 'is_hidden', 'is_public',
+        'perm_code', 'http_method', 'is_public', 'status', 'parent_id',
     ];
 
     protected array $searchableFields = [
-        'menu_code', 'menu_name', 'title', 'path',
+        'perm_name', 'perm_code', 'api_path', 'remark',
     ];
 
     protected array $orderableFields = [
-        'id', 'sort_order', 'create_time',
+        'id', 'perm_name', 'route_priority', 'status', 'create_time',
     ];
 
     public function children()

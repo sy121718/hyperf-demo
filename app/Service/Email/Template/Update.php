@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Template;
 
-use App\Model\Email\EmailTemplateModel;
+use App\Model\Notify\EmailTemplateModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -26,10 +26,10 @@ class Update
     public function handle(array $data): array
     {
         $id = (int) ($data['id'] ?? 0);
-        $id > 0 || paramError('模板ID不能为空');
+        requireId($id, '模板');
 
         $template = $this->templateModel->find($id);
-        ! $template && paramError('邮件模板不存在');
+        ! $template && notFound('邮件模板');
 
         if (! empty($data['template_code']) && $data['template_code'] !== $template->template_code) {
             $this->templateModel->where('template_code', $data['template_code'])

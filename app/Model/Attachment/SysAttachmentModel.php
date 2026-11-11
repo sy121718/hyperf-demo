@@ -14,7 +14,6 @@ namespace App\Model\Attachment;
 
 use App\Common\Model\BaseModel;
 use App\Model\Admin\SysAdminModel;
-use App\Model\FileCategory\SysFileCategoryModel;
 
 class SysAttachmentModel extends BaseModel
 {

@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Role;
 
 use App\Common\CacheKeys;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 use Psr\SimpleCache\CacheInterface;
 
 class AllRoles

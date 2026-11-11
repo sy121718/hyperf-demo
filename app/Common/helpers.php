@@ -30,6 +30,31 @@ function paramError(string $message, int $code = 400): never
 }
 
 /**
+ * 资源不存在的统一入口.
+ *
+ * 集中此处是为了保证同一语义永远返回同一个状态码与文案，
+ * 避免各处 paramError 漏传 404 导致前端无法区分“不存在”和“参数错误”。
+ *
+ * @param string $entity 资源名称，如「管理员」「角色」
+ * @throws BusinessException
+ */
+function notFound(string $entity): never
+{
+    paramError("{$entity}不存在", 404);
+}
+
+/**
+ * 主键必须为正整数的统一校验.
+ *
+ * @param string $entity 资源名称，如「管理员」「角色」
+ * @throws BusinessException
+ */
+function requireId(mixed $id, string $entity): void
+{
+    (int) $id > 0 || paramError("{$entity}ID不能为空");
+}
+
+/**
  * 获取当前 JWT 认证用户信息.
  *
  * @param null|string $field 指定字段名，不传返回全部

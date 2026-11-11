@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Dict;
 
 use App\Common\CacheKeys;
-use App\Model\Dict\SysDictItemModel;
+use App\Model\System\SysDictItemModel;
 use Psr\SimpleCache\CacheInterface;
 
 class GetItems
@@ -26,7 +26,7 @@ class GetItems
 
     public function handle(int $dictId): array
     {
-        $dictId > 0 || paramError('字典ID不能为空');
+        requireId($dictId, '字典');
 
         $cacheKey = CacheKeys::dictItems($dictId);
         $cached = $this->cache->get($cacheKey);

@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Dict;
 
-use App\Model\Dict\SysDictModel;
+use App\Model\System\SysDictModel;
 
 class GetInfo
 {
@@ -23,10 +23,10 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        $id > 0 || paramError('字典ID不能为空');
+        requireId($id, '字典');
 
         $dict = $this->dictModel->with(['items'])->find($id);
-        ! $dict && paramError('字典不存在', 404);
+        ! $dict && notFound('字典');
 
         return [
             'id' => $dict->id,

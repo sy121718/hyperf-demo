@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
-use App\Model\Notice\NoticeModel;
-use App\Model\Notice\NoticeTargetModel;
+use App\Model\Notify\NoticeModel;
+use App\Model\Notify\NoticeTargetModel;
 
 class SetTargets
 {
@@ -30,7 +30,7 @@ class SetTargets
         $targetIds = $data['target_ids'] ?? [];
 
         $notice = $this->noticeModel->find($noticeId);
-        ! $notice && paramError('通知不存在');
+        ! $notice && notFound('通知');
 
         $this->targetModel->where('notice_id', $noticeId)->delete();
 

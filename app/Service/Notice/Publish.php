@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
-use App\Model\Notice\NoticeModel;
+use App\Model\Notify\NoticeModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -28,7 +28,7 @@ class Publish
         Db::beginTransaction();
         try {
             $notice = $this->noticeModel->find($data['id']);
-            ! $notice && paramError('通知不存在');
+            ! $notice && notFound('通知');
 
             $notice->status == 1 && paramError('通知已发布');
 

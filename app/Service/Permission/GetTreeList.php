@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
-use App\Model\Permission\SysPermissionDictModel;
+use App\Model\Rbac\SysPermissionDictModel;
 use Psr\SimpleCache\CacheInterface;
 
 class GetTreeList

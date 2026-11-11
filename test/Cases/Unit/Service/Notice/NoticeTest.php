@@ -14,9 +14,9 @@ namespace HyperfTest\Cases\Unit\Service\Notice;
 
 use App\Dto\Notice\NoticeRequest;
 use App\Exception\BusinessException;
-use App\Model\Notice\NoticeModel;
-use App\Model\Notice\NoticeReadModel;
-use App\Model\Notice\NoticeTargetModel;
+use App\Model\Notify\NoticeModel;
+use App\Model\Notify\NoticeReadModel;
+use App\Model\Notify\NoticeTargetModel;
 use App\Service\Notice\BatchPushToUsers;
 use App\Service\Notice\GetUnreadCount;
 use App\Service\Notice\MarkRead;

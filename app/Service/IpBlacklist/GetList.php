@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\IpBlacklist;
 
-use App\Model\IpBlacklist\IpBlacklistModel;
+use App\Model\System\IpBlacklistModel;
 
 class GetList
 {

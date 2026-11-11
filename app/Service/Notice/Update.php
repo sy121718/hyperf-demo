@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Notice;
 
 use App\Dto\Notice\NoticeRequest;
-use App\Model\Notice\NoticeModel;
+use App\Model\Notify\NoticeModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 
@@ -30,7 +30,7 @@ class Update
         try {
             $id = (int) $request->id;
             $notice = $this->noticeModel->find($id);
-            ! $notice && paramError('通知不存在', 404);
+            ! $notice && notFound('通知');
 
             $updateData = $request->toDbArrayFiltered();
 

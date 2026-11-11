@@ -28,10 +28,10 @@ class ForceLogout
         $adminId = (int) ($data['admin_id'] ?? 0);
         $sessionId = (int) ($data['session_id'] ?? 0);
 
-        $adminId > 0 || paramError('管理员ID不能为空');
+        requireId($adminId, '管理员');
 
         $admin = $this->adminModel->find($adminId);
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
 
         $query = $this->sessionsModel->where('admin_id', $adminId);
 

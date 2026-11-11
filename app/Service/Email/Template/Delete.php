@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Email\Template;
 
-use App\Model\Email\EmailTemplateModel;
+use App\Model\Notify\EmailTemplateModel;
 
 class Delete
 {
@@ -24,7 +24,7 @@ class Delete
     public function handle(int $id): bool
     {
         $template = $this->templateModel->find($id);
-        ! $template && paramError('邮件模板不存在');
+        ! $template && notFound('邮件模板');
 
         $template->delete();
 

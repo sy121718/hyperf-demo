@@ -23,13 +23,13 @@ class GetInfo
 
     public function handle(int $id): array
     {
-        $id > 0 || paramError('管理员ID不能为空');
+        requireId($id, '管理员');
 
         $admin = $this->adminModel
             ->with(['roles', 'sessions'])
             ->find($id);
 
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
 
         return $admin->toArray();
     }

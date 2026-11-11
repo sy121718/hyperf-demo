@@ -30,7 +30,7 @@ class Update
     {
         $id = (int) $request->id;
         $admin = $this->adminModel->find($id);
-        ! $admin && paramError('管理员不存在', 404);
+        ! $admin && notFound('管理员');
 
         $currentUserId = (int) currentUser('id');
         $isSuperAdmin = currentUser('is_admin') == 1;

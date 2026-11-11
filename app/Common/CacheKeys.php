@@ -170,9 +170,20 @@ final class CacheKeys
         return $deleted;
     }
 
+    /**
+     * 读取真实缓存前缀.
+     *
+     * 3.2 的配置结构是 cache.stores.{store}.prefix；cache.default 只是 store 名。
+     * 若这里读 cache.default.prefix 会永远落到默认值，改前缀时 SCAN 会全部落空。
+     */
     private static function getCachePrefix(): string
     {
         $config = container()->get(ConfigInterface::class);
-        return (string) $config->get('cache.default.prefix', 'c:');
+        $store = $config->get('cache.default', 'default');
+        if (! is_string($store)) {
+            $store = 'default';
+        }
+
+        return (string) $config->get("cache.stores.{$store}.prefix", '');
     }
 }

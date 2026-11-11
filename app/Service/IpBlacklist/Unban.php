@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\IpBlacklist;
 
 use App\Common\CacheKeys;
-use App\Model\IpBlacklist\IpBlacklistModel;
+use App\Model\System\IpBlacklistModel;
 
 class Unban
 {
@@ -24,10 +24,10 @@ class Unban
 
     public function handle(int $id): array
     {
-        $id > 0 || paramError('记录ID不能为空');
+        requireId($id, '记录');
 
         $record = $this->model->find($id);
-        ! $record && paramError('拉黑记录不存在', 404);
+        ! $record && notFound('拉黑记录');
 
         $record->status !== IpBlacklistModel::STATUS_ACTIVE
             && paramError('该记录已失效或已被解除');

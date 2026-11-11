@@ -17,9 +17,10 @@ return [
         'auth' => env('REDIS_AUTH', null),
         'port' => (int) env('REDIS_PORT', 6379),
         'db' => (int) env('REDIS_DB', 0),
+        // Redis 同样按 worker 数控制峰值，避免连接数暴涨
         'pool' => [
-            'min_connections' => 5,
-            'max_connections' => 64,
+            'min_connections' => 1,
+            'max_connections' => (int) env('REDIS_MAX_CONNECTIONS', 10),
             'connect_timeout' => 10.0,
             'wait_timeout' => 3.0,
             'heartbeat' => -1,

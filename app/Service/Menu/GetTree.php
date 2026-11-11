@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Menu;
 
 use App\Common\CacheKeys;
-use App\Model\Menu\SysMenuModel;
+use App\Model\Rbac\SysMenuModel;
 use Psr\SimpleCache\CacheInterface;
 
 class GetTree

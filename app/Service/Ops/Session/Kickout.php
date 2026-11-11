@@ -26,10 +26,10 @@ class Kickout
 
     public function handle(int $id): bool
     {
-        $id > 0 || paramError('会话ID不能为空');
+        requireId($id, '会话');
 
         $session = $this->sessionModel->find($id);
-        ! $session && paramError('会话不存在', 404);
+        ! $session && notFound('会话');
 
         if ($session->status !== 1) {
             return true;

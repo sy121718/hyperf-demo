@@ -113,7 +113,7 @@ abstract class BaseRequestDto extends FormRequest
         $data = $this->validated();
         $ref = new ReflectionClass($this);
 
-        foreach ($this->dtoPropertyNames() as $name) {
+        foreach ($this->hydratablePropertyNames() as $name) {
             $value = data_get($data, $name, null);
             if ($value === null) {
                 continue;
@@ -234,6 +234,18 @@ abstract class BaseRequestDto extends FormRequest
             'array' => is_array($value) ? $value : (array) $value,
             default => $value,
         };
+    }
+
+    /**
+     * 需要回填的属性名：业务字段 + 基类的通用查询参数.
+     *
+     * page/limit/search/sort 虽然属于基类，但同样是请求参数，必须一并回填，
+     * 否则 toQueryArray() 永远丢不出分页条件。
+     * @return array<int, string>
+     */
+    protected function hydratablePropertyNames(): array
+    {
+        return [...$this->dtoPropertyNames(), 'page', 'limit', 'search', 'sort'];
     }
 
     /**

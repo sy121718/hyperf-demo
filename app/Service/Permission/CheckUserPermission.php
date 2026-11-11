@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Model\Admin\SysAdminRoleModel;
-use App\Model\Permission\SysPermissionDictModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysPermissionDictModel;
+use App\Model\Rbac\SysRoleModel;
 
 class CheckUserPermission
 {

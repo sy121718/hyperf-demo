@@ -22,9 +22,12 @@ return [
         'charset' => env('DB_CHARSET', 'utf8'),
         'collation' => env('DB_COLLATION', 'utf8_unicode_ci'),
         'prefix' => env('DB_PREFIX', ''),
+        // 连接池上限必须与 MySQL max_connections 对齐：
+        // worker_num × max_connections 就是理论峰值，超过 MySQL 上限会直接报 Too many connections。
+        // 这里取 10，12 worker 时峰值 120，留出余量给运维连接。
         'pool' => [
-            'min_connections' => 5,
-            'max_connections' => 64,
+            'min_connections' => 1,
+            'max_connections' => (int) env('DB_MAX_CONNECTIONS', 10),
             'connect_timeout' => 10.0,
             'wait_timeout' => 3.0,
             'heartbeat' => -1,

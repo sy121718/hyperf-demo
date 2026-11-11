@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Model\Admin;
 
 use App\Common\Model\BaseModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 
 class SysAdminRoleModel extends BaseModel
 {

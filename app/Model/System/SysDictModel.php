@@ -10,44 +10,44 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 
-namespace App\Model\Log;
+namespace App\Model\System;
 
 use App\Common\Model\BaseModel;
-use App\Model\Admin\SysAdminModel;
 
-class SysLoginLogModel extends BaseModel
+class SysDictModel extends BaseModel
 {
-    public bool $timestamps = false;
-
-    protected ?string $table = 'sys_login_log';
+    protected ?string $table = 'sys_dict';
 
     protected ?string $dateFormat = 'Y-m-d H:i:s.v';
 
     protected array $fillable = [
-        'user_id', 'username', 'ip_address', 'location', 'user_agent',
-        'device_type', 'login_time', 'status', 'msg', 'session_id',
+        'dict_name', 'dict_code', 'dict_type', 'status',
+        'create_by', 'update_by',
     ];
 
     protected array $casts = [
         'id' => 'integer',
-        'user_id' => 'integer',
         'status' => 'integer',
+        'create_by' => 'integer',
+        'update_by' => 'integer',
     ];
 
     protected array $whereableFields = [
-        'user_id', 'username', 'ip_address', 'device_type', 'status',
+        'dict_name', 'dict_code', 'dict_type', 'status',
     ];
 
     protected array $searchableFields = [
-        'username', 'ip_address', 'location',
+        'dict_name', 'dict_code',
     ];
 
     protected array $orderableFields = [
-        'id', 'login_time',
+        'id', 'create_time', 'update_time',
     ];
 
-    public function admin()
+    public function items()
     {
-        return $this->belongsTo(SysAdminModel::class, 'user_id');
+        return $this->hasMany(SysDictItemModel::class, 'dict_id')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('id', 'asc');
     }
 }

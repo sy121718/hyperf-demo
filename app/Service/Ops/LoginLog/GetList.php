@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Ops\LoginLog;
 
-use App\Model\Log\SysLoginLogModel;
+use App\Model\Admin\SysLoginLogModel;
 
 class GetList
 {

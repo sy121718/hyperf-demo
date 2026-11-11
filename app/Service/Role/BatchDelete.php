@@ -14,7 +14,7 @@ namespace App\Service\Role;
 
 use App\Common\CacheKeys;
 use App\Model\Admin\SysAdminRoleModel;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
 

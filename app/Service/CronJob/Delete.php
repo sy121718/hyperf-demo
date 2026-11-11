@@ -24,7 +24,7 @@ class Delete
     public function handle(int $id): bool
     {
         $job = $this->cronJobModel->find($id);
-        ! $job && paramError('任务不存在');
+        ! $job && notFound('任务');
 
         $job->delete();
 

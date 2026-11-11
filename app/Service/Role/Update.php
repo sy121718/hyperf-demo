@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Role;
 
 use App\Dto\Role\RoleRequest;
-use App\Model\Role\SysRoleModel;
+use App\Model\Rbac\SysRoleModel;
 
 class Update
 {
@@ -26,7 +26,7 @@ class Update
     {
         $id = (int) $request->id;
         $role = $this->roleModel->find($id);
-        ! $role && paramError('角色不存在', 404);
+        ! $role && notFound('角色');
 
         if ($request->role_code && $request->role_code !== $role->role_code) {
             ! $this->roleModel->isFieldUnique(['role_code' => $request->role_code], $id)

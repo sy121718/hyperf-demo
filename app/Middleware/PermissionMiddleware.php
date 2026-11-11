@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace App\Middleware;
 
 use App\Common\CacheKeys;
-use App\Model\Permission\SysPermissionDictModel;
+use App\Model\Rbac\SysPermissionDictModel;
 use Hyperf\Context\Context;
 use Hyperf\DbConnection\Db;
 use Hyperf\HttpServer\Contract\ResponseInterface as HttpResponse;
