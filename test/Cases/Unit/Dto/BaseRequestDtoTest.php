@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace HyperfTest\Cases\Unit\Dto;
 
 use App\Dto\Role\RoleRequest;
+use Hyperf\Context\Context;
 use Hyperf\Context\RequestContext;
 use Hyperf\HttpMessage\Server\Request as PsrRequest;
 use PHPUnit\Framework\TestCase;
@@ -154,16 +155,39 @@ class BaseRequestDtoTest extends TestCase
         $this->assertTrue($dto->authorize());
     }
 
-    public function testDataDoesNotLeakBetweenInstances(): void
+    public function testSingletonStoresDataInCoroutineContext(): void
     {
-        // DTO 由容器单例持有，数据必须落在协程上下文里，
-        // 否则上一个请求的字段会残留在下一个请求上
-        $first = RoleRequest::fromArray(['role_code' => 'ops', 'page' => 2]);
-        $this->assertSame('ops', $first->role_code);
+        // 容器按单例复用 DTO。若数据写在实例属性上，跨请求会残留、
+        // 并发协程之间还会互相覆盖，所以单例的字段必须落到协程上下文。
+        $dto = container()->get(RoleRequest::class);
+        $dto->role_code = 'ops';
 
-        $second = RoleRequest::fromArray(['role_name' => '运维']);
+        $this->assertSame('ops', $dto->role_code);
+        $this->assertSame(
+            'ops',
+            Context::get(RoleRequest::class . '.dto.role_code'),
+            '单例的字段必须存进协程上下文，而不是留在对象属性上'
+        );
 
-        $this->assertNull($second->role_code);
-        $this->assertSame(1, $second->pageNumber());
+        // 清掉上下文里的值，同一个对象就读不到了 —— 证明值没粘在实例上
+        Context::destroy(RoleRequest::class . '.dto.role_code');
+        $this->assertNull($dto->role_code);
+    }
+
+    public function testBatchInstancesKeepTheirOwnData(): void
+    {
+        // 批量场景一次构造多个同类型 DTO，它们必须各持自己的数据
+        $items = array_map(
+            static fn (array $item) => RoleRequest::fromArray($item),
+            [
+                ['role_code' => 'a', 'role_name' => '甲'],
+                ['role_code' => 'b', 'role_name' => '乙'],
+            ]
+        );
+
+        $this->assertSame('a', $items[0]->role_code);
+        $this->assertSame('甲', $items[0]->role_name);
+        $this->assertSame('b', $items[1]->role_code);
+        $this->assertSame('乙', $items[1]->role_name);
     }
 }

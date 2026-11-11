@@ -54,12 +54,18 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 重写容器构造：实例由容器单例复用，属性数据不能留在对象身上.
+     *
+     * 摘掉声明属性后，读写才会落到 __get/__set，转而存进协程上下文。
+     * 注意只对容器单例这么做：fromArray() 新建的对象存活期不超过一次调用，
+     * 实例属性天然按对象隔离，改存上下文反而会让同请求内的多个实例互相覆盖。
      */
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
 
-        $this->resetProperties($this->hydratablePropertyNames());
+        foreach ($this->hydratablePropertyNames() as $name) {
+            unset($this->{$name});
+        }
     }
 
     public function __get($name): mixed
@@ -154,13 +160,15 @@ abstract class BaseRequestDto extends FormRequest
     }
 
     /**
-     * 脱离 HTTP 上下文构造 DTO，供单元测试与内部调用使用.
+     * 脱离 HTTP 上下文构造 DTO，供单元测试与批量场景使用.
+     *
+     * 新建对象的属性直接留在实例上，不写协程上下文：批量场景一次会构造多个
+     * 同类型实例，它们必须各自持有自己的数据。
      */
     public static function fromArray(array $data): static
     {
         /** @var static $dto */
         $dto = (new ReflectionClass(static::class))->newInstanceWithoutConstructor();
-        $dto->resetProperties($dto->hydratablePropertyNames());
         $dto->fillFrom($data);
 
         return $dto;
@@ -299,14 +307,15 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 按属性名与类型回填数据.
+     *
+     * 这里直接写实例属性，不能走 unset：fromArray() 建的对象属性还在实例上，
+     * 一旦 unset 就会落到 __set 存进协程上下文，批量场景的几个实例会互相覆盖。
      */
     protected function fillFrom(array $data): void
     {
         $ref = new ReflectionClass($this);
 
         foreach ($this->hydratablePropertyNames() as $name) {
-            unset($this->{$name});
-
             $value = data_get($data, $name, null);
             if ($value === null) {
                 continue;
@@ -322,24 +331,6 @@ abstract class BaseRequestDto extends FormRequest
     protected function contextKey(string $name): string
     {
         return static::class . '.dto.' . $name;
-    }
-
-    /**
-     * 清空指定字段的上下文数据.
-     *
-     * 注意：unset 一个已摘除的属性会走 __unset，必须在摘除时就一次性清掉，
-     * 不能重复 unset，否则每次构造都会产生一次多余调用。
-     * @param array<int, string> $names
-     */
-    protected function resetProperties(array $names): void
-    {
-        foreach ($names as $name) {
-            if (Context::has($this->contextKey($name))) {
-                Context::destroy($this->contextKey($name));
-            }
-            // 摘掉声明属性，后续读写才会落到 __get/__set
-            unset($this->{$name});
-        }
     }
 
     /**
