@@ -50,6 +50,21 @@ class NoticeModel extends BaseModel
         'create_time',
     ];
 
+    /**
+     * 用户可见的有效公告：已发布且未过期。
+     *
+     * expire_time 为 NULL 表示不设过期时间（长期有效），不能因 NULL 被过滤掉。
+     * 列表与未读数必须共用这一个口径，否则「看得到但不算未读」。
+     */
+    public function scopePublished($query)
+    {
+        return $query->where('status', 1)
+            ->where(function ($q) {
+                $q->whereNull('expire_time')
+                    ->orWhere('expire_time', '>', date('Y-m-d H:i:s'));
+            });
+    }
+
     public function targets()
     {
         return $this->hasMany(NoticeTargetModel::class, 'notice_id', 'id');

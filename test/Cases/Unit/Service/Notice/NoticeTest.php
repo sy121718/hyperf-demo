@@ -170,7 +170,8 @@ class NoticeTest extends TestCase
     public function testGetUnreadCount(): void
     {
         $noticeModel = Mockery::mock(NoticeModel::class);
-        $noticeModel->shouldReceive('where->where->count')->andReturn(10);
+        // 未读数与列表共用 published 口径，不能再各自拼 status/expire_time
+        $noticeModel->shouldReceive('published->count')->andReturn(10);
 
         $readModel = Mockery::mock(NoticeReadModel::class);
         $readModel->shouldReceive('where->count')->andReturn(3);
@@ -193,7 +194,7 @@ class NoticeTest extends TestCase
     public function testGetUnreadCountAllRead(): void
     {
         $noticeModel = Mockery::mock(NoticeModel::class);
-        $noticeModel->shouldReceive('where->where->count')->andReturn(5);
+        $noticeModel->shouldReceive('published->count')->andReturn(5);
 
         $readModel = Mockery::mock(NoticeReadModel::class);
         $readModel->shouldReceive('where->count')->andReturn(10);

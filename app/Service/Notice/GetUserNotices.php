@@ -35,11 +35,7 @@ class GetUserNotices
         $noticeType = $data['notice_type'] ?? null;
 
         $paginator = $this->noticeModel
-            ->where('status', 1)
-            // 没设过期时间的公告长期有效，不能因为 NULL 被过滤掉
-            ->where(function ($q) {
-                $q->whereNull('expire_time')->orWhere('expire_time', '>', date('Y-m-d H:i:s'));
-            })
+            ->published()
             ->when($noticeType, fn ($q, $v) => $q->where('notice_type', $v))
             ->orderBy('is_top', 'desc')
             ->orderBy('publish_time', 'desc')

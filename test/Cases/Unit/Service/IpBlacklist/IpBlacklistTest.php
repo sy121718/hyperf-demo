@@ -146,10 +146,15 @@ class IpBlacklistTest extends TestCase
 
     public function testUnbanZeroId(): void
     {
+        // ID 校验已并入 findOrNotFound，模型被 mock 时需显式让这一步抛错
         $model = Mockery::mock(IpBlacklistModel::class);
+        $model->shouldReceive('findOrNotFound')
+            ->with(0, '拉黑记录')
+            ->andThrow(new BusinessException(400, '拉黑记录ID不能为空'));
 
         $this->expectException(BusinessException::class);
-        $this->expectExceptionMessage('记录ID不能为空');
+        $this->expectExceptionCode(400);
+        $this->expectExceptionMessage('拉黑记录ID不能为空');
 
         (new Unban($model))->handle(0);
     }

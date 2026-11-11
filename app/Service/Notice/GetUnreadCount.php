@@ -31,8 +31,7 @@ class GetUnreadCount
 
         [$totalCount, $readCount] = parallel([
             fn () => $this->noticeModel
-                ->where('status', 1)
-                ->where('expire_time', '>', date('Y-m-d H:i:s'))
+                ->published()
                 ->count(),
 
             fn () => $this->readModel

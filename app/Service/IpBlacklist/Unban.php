@@ -24,8 +24,6 @@ class Unban
 
     public function handle(int $id): array
     {
-        requireId($id, '记录');
-
         $record = $this->model->findOrNotFound($id, '拉黑记录');
 
         $record->status !== IpBlacklistModel::STATUS_ACTIVE
