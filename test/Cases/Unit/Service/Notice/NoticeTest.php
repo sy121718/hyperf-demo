@@ -140,7 +140,7 @@ class NoticeTest extends TestCase
         $readModel->shouldReceive('create')->once()->andReturn(true);
 
         $action = new MarkRead($noticeModel, $readModel);
-        $this->assertTrue($action->handle(['notice_id' => 1, 'user_id' => 1]));
+        $this->assertTrue($action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 1])));
     }
 
     public function testMarkReadAlreadyRead(): void
@@ -151,7 +151,7 @@ class NoticeTest extends TestCase
         $readModel->shouldReceive('where->where->exists')->andReturn(true);
 
         $action = new MarkRead($noticeModel, $readModel);
-        $this->assertTrue($action->handle(['notice_id' => 1, 'user_id' => 1]));
+        $this->assertTrue($action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 1])));
     }
 
     public function testMarkReadZeroUserId(): void
@@ -162,7 +162,7 @@ class NoticeTest extends TestCase
         $action = new MarkRead($noticeModel, $readModel);
 
         $this->expectException(BusinessException::class);
-        $action->handle(['notice_id' => 1, 'user_id' => 0]);
+        $action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 0]));
     }
 
     // ==================== GetUnreadCount ====================
@@ -216,7 +216,7 @@ class NoticeTest extends TestCase
         $action = new SetTargets($noticeModel, $targetModel);
 
         $this->expectException(BusinessException::class);
-        $action->handle(['id' => 999, 'target_type' => 1]);
+        $action->handle(NoticeRequest::fromArray(['id' => 999, 'target_type' => 1]));
     }
 
     public function testSetTargetsAllUsers(): void
@@ -231,7 +231,7 @@ class NoticeTest extends TestCase
         $targetModel->shouldReceive('insert')->once()->andReturn(true);
 
         $action = new SetTargets($noticeModel, $targetModel);
-        $this->assertTrue($action->handle(['id' => 1, 'target_type' => 1]));
+        $this->assertTrue($action->handle(NoticeRequest::fromArray(['id' => 1, 'target_type' => 1])));
     }
 
     public function testSetTargetsSpecificUsers(): void
@@ -248,11 +248,11 @@ class NoticeTest extends TestCase
         }))->andReturn(true);
 
         $action = new SetTargets($noticeModel, $targetModel);
-        $this->assertTrue($action->handle([
+        $this->assertTrue($action->handle(NoticeRequest::fromArray([
             'id' => 1,
             'target_type' => 4,
             'target_ids' => [1, 2],
-        ]));
+        ])));
     }
 
     // ==================== BatchPushToUsers ====================
@@ -264,7 +264,7 @@ class NoticeTest extends TestCase
         $action = new BatchPushToUsers($targetModel);
 
         $this->expectException(BusinessException::class);
-        $action->handle(['notice_id' => 0, 'target_users' => [1]]);
+        $action->handle(NoticeRequest::fromArray(['notice_id' => 0, 'target_users' => [1]]));
     }
 
     public function testBatchPushEmptyUsers(): void
@@ -274,7 +274,7 @@ class NoticeTest extends TestCase
         $action = new BatchPushToUsers($targetModel);
 
         $this->expectException(BusinessException::class);
-        $action->handle(['notice_id' => 1, 'target_users' => []]);
+        $action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'target_users' => []]));
     }
 
     public function testBatchPushSuccess(): void
@@ -283,7 +283,7 @@ class NoticeTest extends TestCase
         $targetModel->shouldReceive('insert')->once()->andReturn(true);
 
         $action = new BatchPushToUsers($targetModel);
-        $result = $action->handle(['notice_id' => 1, 'target_users' => [1, 2, 3]]);
+        $result = $action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'target_users' => [1, 2, 3]]));
 
         $this->assertEquals(3, $result);
     }

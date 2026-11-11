@@ -53,6 +53,11 @@ abstract class BaseRequestDto extends FormRequest
     public ?array $sort = null;
 
     /**
+     * 列表详情模式：传 detail 时返回全字段并预加载关联.
+     */
+    public ?string $with = null;
+
+    /**
      * 重写容器构造：实例由容器单例复用，属性数据不能留在对象身上.
      *
      * 摘掉声明属性后，读写才会落到 __get/__set，转而存进协程上下文。
@@ -203,6 +208,14 @@ abstract class BaseRequestDto extends FormRequest
     }
 
     /**
+     * 列表是否需要全字段与关联数据.
+     */
+    public function withDetail(): bool
+    {
+        return $this->with === 'detail';
+    }
+
+    /**
      * 转成可直接写库的数组（已剔除虚拟字段）.
      */
     public function toDbArray(): array
@@ -230,6 +243,7 @@ abstract class BaseRequestDto extends FormRequest
             'sort' => 'nullable|array',
             'sort.field' => 'nullable|string|max:50',
             'sort.direction' => 'nullable|in:asc,desc',
+            'with' => 'nullable|string|in:detail',
         ];
     }
 
@@ -282,7 +296,7 @@ abstract class BaseRequestDto extends FormRequest
      */
     protected function hydratablePropertyNames(): array
     {
-        return [...$this->dtoPropertyNames(), 'page', 'limit', 'search', 'sort'];
+        return [...$this->dtoPropertyNames(), 'page', 'limit', 'search', 'sort', 'with'];
     }
 
     /**

@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Admin\Permission;
 
 use App\Common\CacheKeys;
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Admin\SysAdminRoleModel;
 use App\Model\Rbac\SysRoleModel;
@@ -26,15 +27,15 @@ class AssignRoles
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(AdminRequest $request): array
     {
         $isSuperAdmin = currentUser('is_admin') == 1;
         if (! $isSuperAdmin) {
             paramError('只有超级管理员可以分配角色', 403);
         }
 
-        $adminCode = $data['admin_code'] ?? '';
-        $roleCodes = $data['role_codes'] ?? [];
+        $adminCode = (string) $request->admin_code;
+        $roleCodes = $request->role_codes ?? [];
 
         ! empty($adminCode) || paramError('管理员标识不能为空');
         ! empty($roleCodes) || paramError('角色标识不能为空');

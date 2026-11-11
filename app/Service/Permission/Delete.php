@@ -24,9 +24,8 @@ class Delete
     ) {
     }
 
-    public function handle(array $data): bool
+    public function handle(int $id): bool
     {
-        $id = (int) ($data['id'] ?? 0);
         $permission = $this->permissionModel->findOrNotFound($id, '权限');
 
         Db::beginTransaction();

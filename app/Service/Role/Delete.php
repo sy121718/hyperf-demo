@@ -26,10 +26,8 @@ class Delete
     ) {
     }
 
-    public function handle(array $data): bool
+    public function handle(int $id): bool
     {
-        $id = (int) ($data['id'] ?? 0);
-
         $role = $this->roleModel->findOrNotFound($id, '角色');
 
         $this->adminRoleModel->where('role_code', $role->role_code)->exists()

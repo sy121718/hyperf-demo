@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notify\NoticeTargetModel;
 
 class BatchPushToUsers
@@ -21,10 +22,10 @@ class BatchPushToUsers
     ) {
     }
 
-    public function handle(array $data): int
+    public function handle(NoticeRequest $request): int
     {
-        $noticeId = (int) ($data['notice_id'] ?? 0);
-        $targetUsers = $data['target_users'] ?? [];
+        $noticeId = (int) $request->notice_id;
+        $targetUsers = $request->target_users ?? [];
 
         requireId($noticeId, '通知');
         ! empty($targetUsers) || paramError('目标用户不能为空');

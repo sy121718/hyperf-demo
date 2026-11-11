@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Role;
 
 use App\Common\CacheKeys;
+use App\Dto\Role\RoleRequest;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Rbac\SysRoleModel;
 
@@ -24,10 +25,10 @@ class RemoveRoleFromAdmin
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(RoleRequest $request): array
     {
-        $adminId = (int) ($data['admin_id'] ?? 0);
-        $roleId = (int) ($data['role_id'] ?? 0);
+        $adminId = (int) $request->admin_id;
+        $roleId = (int) $request->role_id;
 
         $admin = $this->adminModel->findOrNotFound($adminId, '管理员');
 

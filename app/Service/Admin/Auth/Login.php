@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Auth;
 
+use App\Dto\Auth\LoginRequest;
 use App\Model\Admin\SysAdminModel;
 use App\Service\Ops\Session\CreateSession;
 use Firebase\JWT\JWT;
@@ -33,10 +34,10 @@ class Login
      *
      * @return array{token: string, token_type: string, expires_in: int, admin_info: array}
      */
-    public function handle(array $data): array
+    public function handle(LoginRequest $request): array
     {
-        $username = $data['username'] ?? '';
-        $password = $data['password'] ?? '';
+        $username = (string) $request->username;
+        $password = (string) $request->password;
 
         empty($username) && paramError('用户名不能为空');
         empty($password) && paramError('密码不能为空');

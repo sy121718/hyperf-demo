@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Admin\Auth;
 
+use App\Dto\Admin\AdminRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
 use App\Service\Admin\Auth\ResetPassword;
@@ -53,7 +54,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 10, 'new_password' => 'new123']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 10, 'new_password' => 'new123']));
 
         $this->assertTrue(password_verify('new123', $target->password));
     }
@@ -66,7 +67,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(1, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 1, 'new_password' => 'suNew!']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 1, 'new_password' => 'suNew!']));
 
         $this->assertTrue(password_verify('suNew!', $target->password));
     }
@@ -79,7 +80,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'suNew2']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'suNew2']));
 
         $this->assertTrue(password_verify('suNew2', $target->password));
     }
@@ -94,7 +95,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 5, 'new_password' => 'myNew!']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 5, 'new_password' => 'myNew!']));
 
         $this->assertTrue(password_verify('myNew!', $target->password));
     }
@@ -107,7 +108,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'test_pass']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'test_pass']));
 
         $this->assertStringStartsWith('$2y$', $target->password);
     }
@@ -118,7 +119,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'plain_text_pw']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'plain_text_pw']));
 
         $this->assertNotSame('plain_text_pw', $target->password);
     }
@@ -130,7 +131,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $plainPwd = 'verify_this_123!';
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $plainPwd]);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => $plainPwd]));
 
         $this->assertTrue(password_verify($plainPwd, $target->password));
         $this->assertFalse(password_verify('wrong_guess', $target->password));
@@ -143,7 +144,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $special = 'P@$$w0rd!#%^&*()中文密码🔐';
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $special]);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => $special]));
 
         $this->assertTrue(password_verify($special, $target->password));
     }
@@ -155,7 +156,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $pwd72 = str_repeat('x', 72);
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $pwd72]);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => $pwd72]));
 
         $this->assertTrue(password_verify($pwd72, $target->password));
     }
@@ -167,7 +168,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
         $pwd73 = str_repeat('A', 72) . 'B';
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => $pwd73]);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => $pwd73]));
 
         // bcrypt 截断到 72 字节，所以把第 73 字节改了也能验证通过（已知特性）
         $pwdSamePrefix = str_repeat('A', 72) . 'C';
@@ -188,7 +189,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'np']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'np']));
 
         $this->assertSame(1, $saveCount, 'save 应恰好被调用一次');
     }
@@ -204,7 +205,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')
             ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
-        $this->buildAction($model)->handle(['admin_id' => 0, 'new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 0, 'new_password' => 'x']));
     }
 
     public function testFailsWithNegativeAdminId(): void
@@ -216,7 +217,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')
             ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
-        $this->buildAction($model)->handle(['admin_id' => -1, 'new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => -1, 'new_password' => 'x']));
     }
 
     public function testFailsWithMissingAdminId(): void
@@ -228,7 +229,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')
             ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
-        $this->buildAction($model)->handle(['new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['new_password' => 'x']));
     }
 
     public function testFailsWithStringAdminId(): void
@@ -240,7 +241,7 @@ class ResetPasswordTest extends TestCase
         $model->shouldReceive('findOrNotFound')
             ->andThrow(new BusinessException(400, '管理员ID不能为空'));
 
-        $this->buildAction($model)->handle(['admin_id' => 'abc', 'new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 'abc', 'new_password' => 'x']));
     }
 
     public function testFailsWithEmptyPassword(): void
@@ -248,7 +249,7 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('新密码不能为空');
 
-        $this->buildAction()->handle(['admin_id' => 2, 'new_password' => '']);
+        $this->buildAction()->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => '']));
     }
 
     public function testFailsWithMissingPassword(): void
@@ -256,14 +257,14 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('新密码不能为空');
 
-        $this->buildAction()->handle(['admin_id' => 2]);
+        $this->buildAction()->handle(AdminRequest::fromArray(['admin_id' => 2]));
     }
 
     public function testFailsWithEmptyData(): void
     {
         $this->expectException(BusinessException::class);
 
-        $this->buildAction()->handle([]);
+        $this->buildAction()->handle(AdminRequest::fromArray([]));
     }
 
     // ==================== 5. 业务权限校验 ====================
@@ -279,7 +280,7 @@ class ResetPasswordTest extends TestCase
         $this->expectExceptionCode(404);
         $this->expectExceptionMessage('管理员不存在');
 
-        $this->buildAction($model)->handle(['admin_id' => 999, 'new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 999, 'new_password' => 'x']));
     }
 
     public function testNormalAdminCannotResetSuperAdminPassword(): void
@@ -294,7 +295,7 @@ class ResetPasswordTest extends TestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('无权重置超级管理员密码');
 
-        $this->buildAction($model)->handle(['admin_id' => 1, 'new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 1, 'new_password' => 'x']));
     }
 
     public function testNormalAdminCannotResetOthersPassword(): void
@@ -309,7 +310,7 @@ class ResetPasswordTest extends TestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('无权重置他人密码');
 
-        $this->buildAction($model)->handle(['admin_id' => 10, 'new_password' => 'x']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 10, 'new_password' => 'x']));
     }
 
     // ==================== 6. 数据完整性 ====================
@@ -322,7 +323,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'np']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'np']));
 
         $this->assertSame('keep_me', $target->username);
         $this->assertSame(1, $target->status);
@@ -336,7 +337,7 @@ class ResetPasswordTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($target);
 
-        $this->buildAction($model)->handle(['admin_id' => 2, 'new_password' => 'brand_new']);
+        $this->buildAction($model)->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'brand_new']));
 
         $this->assertFalse(password_verify('old_pwd', $target->password));
         $this->assertTrue(password_verify('brand_new', $target->password));
@@ -351,7 +352,7 @@ class ResetPasswordTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(401);
 
-        $this->buildAction()->handle(['admin_id' => 2, 'new_password' => 'x']);
+        $this->buildAction()->handle(AdminRequest::fromArray(['admin_id' => 2, 'new_password' => 'x']));
     }
 
     private function fakeTarget(array $overrides = []): MockInterface

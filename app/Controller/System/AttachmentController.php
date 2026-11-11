@@ -21,7 +21,7 @@ class AttachmentController extends AbstractController
 {
     public function list(AttachmentRequest $request): array
     {
-        $result = container()->get(AttachmentAction\GetList::class)->handle($request->toQueryArray());
+        $result = container()->get(AttachmentAction\GetList::class)->handle($request);
         return $this->success(AttachmentResponse::page($result), '获取成功');
     }
 

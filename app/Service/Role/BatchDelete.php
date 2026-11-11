@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Role;
 
 use App\Common\CacheKeys;
+use App\Dto\Role\RoleRequest;
 use App\Model\Admin\SysAdminRoleModel;
 use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
@@ -26,14 +27,14 @@ class BatchDelete
     ) {
     }
 
-    public function handle(array $data): int
+    public function handle(RoleRequest $request): int
     {
         $isSuperAdmin = currentUser('is_admin') == 1;
         if (! $isSuperAdmin) {
             paramError('只有超级管理员可以批量删除角色', 403);
         }
 
-        $ids = $data['ids'] ?? [];
+        $ids = $request->ids ?? [];
         empty($ids) && paramError('请选择要删除的角色');
 
         Db::beginTransaction();

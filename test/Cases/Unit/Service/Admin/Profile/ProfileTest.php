@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Admin\Profile;
 
+use App\Dto\Admin\AdminRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
 use App\Service\Admin\Profile\ChangePassword;
@@ -78,7 +79,7 @@ class ProfileTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
 
-        $result = (new UpdateProfile($model))->handle(['name' => 'New Name']);
+        $result = (new UpdateProfile($model))->handle(AdminRequest::fromArray(['name' => 'New Name']));
 
         $this->assertTrue($result);
     }
@@ -94,7 +95,7 @@ class ProfileTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('邮箱已被占用');
 
-        (new UpdateProfile($model))->handle(['email' => 'taken@test.com']);
+        (new UpdateProfile($model))->handle(AdminRequest::fromArray(['email' => 'taken@test.com']));
     }
 
     public function testChangePasswordSuccess(): void
@@ -107,7 +108,7 @@ class ProfileTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(5, '用户')->andReturn($admin);
 
-        $result = (new ChangePassword($model))->handle('old123', 'new456');
+        $result = (new ChangePassword($model))->handle(AdminRequest::fromArray(['old_password' => 'old123', 'new_password' => 'new456']));
 
         $this->assertTrue($result);
     }
@@ -124,7 +125,7 @@ class ProfileTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('旧密码错误');
 
-        (new ChangePassword($model))->handle('wrong', 'new456');
+        (new ChangePassword($model))->handle(AdminRequest::fromArray(['old_password' => 'wrong', 'new_password' => 'new456']));
     }
 
     public function testChangePasswordNotLoggedIn(): void
@@ -136,7 +137,7 @@ class ProfileTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(401);
 
-        (new ChangePassword($model))->handle('old', 'new');
+        (new ChangePassword($model))->handle(AdminRequest::fromArray(['old_password' => 'old', 'new_password' => 'new']));
     }
 
     /**

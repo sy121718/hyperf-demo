@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Admin\Permission;
 
 use App\Common\CacheKeys;
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Rbac\SysRoleModel;
 use Hyperf\DbConnection\Db;
@@ -28,10 +29,10 @@ class RevokeRole
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(AdminRequest $request): array
     {
-        $adminId = (int) ($data['admin_id'] ?? 0);
-        $roleIds = $data['role_ids'] ?? [];
+        $adminId = (int) $request->admin_id;
+        $roleIds = $request->role_ids ?? [];
 
         requireId($adminId, '管理员');
         ! empty($roleIds) && is_array($roleIds) || paramError('角色ID不能为空');

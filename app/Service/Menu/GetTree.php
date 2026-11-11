@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Menu;
 
 use App\Common\CacheKeys;
+use App\Dto\Menu\MenuRequest;
 use App\Model\Rbac\SysMenuModel;
 use Psr\SimpleCache\CacheInterface;
 
@@ -24,10 +25,10 @@ class GetTree
     ) {
     }
 
-    public function handle(array $data = []): array
+    public function handle(MenuRequest $request): array
     {
-        $search = $data['search'] ?? null;
-        $hasFilter = $search || ! empty($data['status']);
+        // 带筛选条件时结果不进缓存，避免筛选结果污染全量树
+        $hasFilter = $request->search !== null || $request->status !== null;
 
         if (! $hasFilter) {
             $cached = $this->cache->get(CacheKeys::MENU_TREE);
@@ -37,13 +38,13 @@ class GetTree
         }
 
         $menus = $this->menuModel
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny(
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny(
                 $this->menuModel->getSearchableFields(),
                 'like',
-                "%{$search}%"
+                "%{$request->search}%"
             ))
-            ->sort($data)
+            ->sort($request->toQueryArray())
             ->get();
 
         $result = $menus->isEmpty() ? [] : $this->menuModel->buildTree($menus->toArray());

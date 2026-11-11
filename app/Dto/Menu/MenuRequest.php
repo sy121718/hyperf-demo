@@ -111,6 +111,7 @@ class MenuRequest extends BaseRequestDto
 
     protected function virtualFields(): array
     {
-        return ['id', 'ids'];
+        // permission_codes 由 Action 拼成 permission_code 落库，表里没有这一列
+        return ['id', 'ids', 'permission_codes'];
     }
 }

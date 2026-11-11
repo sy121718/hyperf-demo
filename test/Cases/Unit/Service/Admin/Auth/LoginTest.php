@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Admin\Auth;
 
+use App\Dto\Auth\LoginRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
 use App\Service\Admin\Auth\Login;
@@ -49,7 +50,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $action = $this->buildAction(adminModel: $model);
-        $result = $action->handle(['username' => 'admin', 'password' => 'admin123']);
+        $result = $action->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertArrayHasKey('token', $result);
         $this->assertArrayHasKey('token_type', $result);
@@ -65,7 +66,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertSame('bearer', $result['token_type']);
     }
@@ -77,7 +78,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $parts = explode('.', $result['token']);
         $this->assertCount(3, $parts, 'JWT 应该包含 header.payload.signature 3 段');
@@ -93,7 +94,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $payload = json_decode(base64_decode(explode('.', $result['token'])[1]), true);
         $this->assertSame(42, $payload['sub']);
@@ -110,7 +111,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $envTtl = (int) env('JWT_TTL', 7200);
         $this->assertSame($envTtl, $result['expires_in']);
@@ -123,7 +124,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertArrayNotHasKey('password', $result['admin_info']);
     }
@@ -138,7 +139,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'zhangsan', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'zhangsan', 'password' => 'admin123']));
 
         $info = $result['admin_info'];
         $this->assertSame(7, $info['id']);
@@ -154,7 +155,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertSame(0, $admin->login_failure_count);
     }
@@ -166,7 +167,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertNotNull($admin->last_login_time);
         $this->assertMatchesRegularExpression(
@@ -183,7 +184,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $this->buildAction(adminModel: $model, clientIp: '10.0.0.55')
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertSame('10.0.0.55', $admin->last_login_ip);
     }
@@ -200,7 +201,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertSame(1, $saveCount, 'save 应恰好被调用一次');
     }
@@ -218,7 +219,7 @@ class LoginTest extends TestCase
         });
 
         $this->buildAction(adminModel: $model, createSession: $session, clientIp: '1.2.3.4', userAgent: 'Chrome/100')
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertNotNull($sessionData, 'CreateSession 应被调用');
         $this->assertSame(33, $sessionData['admin_id']);
@@ -241,7 +242,7 @@ class LoginTest extends TestCase
         })->andReturnNull();
 
         $result = $this->buildAction(adminModel: $model, createSession: $session)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertSame($result['token'], $capturedToken);
     }
@@ -253,7 +254,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('用户名不能为空');
 
-        $this->buildAction()->handle(['username' => '', 'password' => 'abc']);
+        $this->buildAction()->handle(LoginRequest::fromArray(['username' => '', 'password' => 'abc']));
     }
 
     public function testLoginFailsWithEmptyPassword(): void
@@ -261,7 +262,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('密码不能为空');
 
-        $this->buildAction()->handle(['username' => 'admin', 'password' => '']);
+        $this->buildAction()->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => '']));
     }
 
     public function testLoginFailsWithMissingUsername(): void
@@ -269,7 +270,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('用户名不能为空');
 
-        $this->buildAction()->handle(['password' => 'abc']);
+        $this->buildAction()->handle(LoginRequest::fromArray(['password' => 'abc']));
     }
 
     public function testLoginFailsWithMissingPassword(): void
@@ -277,7 +278,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('密码不能为空');
 
-        $this->buildAction()->handle(['username' => 'admin']);
+        $this->buildAction()->handle(LoginRequest::fromArray(['username' => 'admin']));
     }
 
     public function testLoginFailsWithEmptyArray(): void
@@ -285,7 +286,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('用户名不能为空');
 
-        $this->buildAction()->handle([]);
+        $this->buildAction()->handle(LoginRequest::fromArray([]));
     }
 
     // ==================== 3. 认证失败 ====================
@@ -298,7 +299,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('账号或密码错误');
 
-        $this->buildAction(adminModel: $model)->handle(['username' => 'ghost', 'password' => 'abc']);
+        $this->buildAction(adminModel: $model)->handle(LoginRequest::fromArray(['username' => 'ghost', 'password' => 'abc']));
     }
 
     public function testLoginFailsWithWrongPassword(): void
@@ -310,7 +311,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('账号或密码错误');
 
-        $this->buildAction(adminModel: $model)->handle(['username' => 'admin', 'password' => 'wrongpwd']);
+        $this->buildAction(adminModel: $model)->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'wrongpwd']));
     }
 
     public function testLoginFailsWhenAccountDisabledStatus0(): void
@@ -322,7 +323,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('账号已被禁用');
 
-        $this->buildAction(adminModel: $model)->handle(['username' => 'admin', 'password' => 'admin123']);
+        $this->buildAction(adminModel: $model)->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
     }
 
     public function testLoginFailsWhenAccountDisabledStatus2(): void
@@ -334,7 +335,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('账号已被禁用');
 
-        $this->buildAction(adminModel: $model)->handle(['username' => 'admin', 'password' => 'admin123']);
+        $this->buildAction(adminModel: $model)->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
     }
 
     // ==================== 4. 不应调用后续流程 ====================
@@ -352,7 +353,7 @@ class LoginTest extends TestCase
 
         try {
             $this->buildAction(adminModel: $model, createSession: $session)
-                ->handle(['username' => 'ghost', 'password' => 'abc']);
+                ->handle(LoginRequest::fromArray(['username' => 'ghost', 'password' => 'abc']));
         } catch (BusinessException) {
         }
 
@@ -372,7 +373,7 @@ class LoginTest extends TestCase
 
         try {
             $this->buildAction(adminModel: $model)
-                ->handle(['username' => 'admin', 'password' => 'admin123']);
+                ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
         } catch (BusinessException) {
         }
 
@@ -391,7 +392,7 @@ class LoginTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('账号或密码错误');
 
-        $this->buildAction(adminModel: $model)->handle(['username' => '   ', 'password' => 'admin123']);
+        $this->buildAction(adminModel: $model)->handle(LoginRequest::fromArray(['username' => '   ', 'password' => 'admin123']));
     }
 
     public function testLoginWithSqlInjectionInUsername(): void
@@ -408,7 +409,7 @@ class LoginTest extends TestCase
         $this->expectExceptionMessage('账号或密码错误');
 
         $this->buildAction(adminModel: $model)
-            ->handle(['username' => "' OR 1=1 --", 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => "' OR 1=1 --", 'password' => 'admin123']));
     }
 
     public function testLoginWithVeryLongPassword(): void
@@ -420,7 +421,7 @@ class LoginTest extends TestCase
 
         // bcrypt 截断在 72 字节，所以超长密码只比较前 72 字节
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => $longPwd]);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => $longPwd]));
 
         $this->assertNotEmpty($result['token']);
     }
@@ -433,7 +434,7 @@ class LoginTest extends TestCase
         $this->mockFind($model, $admin);
 
         $result = $this->buildAction(adminModel: $model)
-            ->handle(['username' => 'admin', 'password' => $specialPwd]);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => $specialPwd]));
 
         $this->assertNotEmpty($result['token']);
     }
@@ -449,7 +450,7 @@ class LoginTest extends TestCase
         $request->shouldReceive('getServerParams')->andReturn([]);
 
         $this->buildAction(adminModel: $model, request: $request)
-            ->handle(['username' => 'admin', 'password' => 'admin123']);
+            ->handle(LoginRequest::fromArray(['username' => 'admin', 'password' => 'admin123']));
 
         $this->assertSame('127.0.0.1', $admin->last_login_ip);
     }

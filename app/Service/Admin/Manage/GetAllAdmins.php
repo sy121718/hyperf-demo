@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 
 class GetAllAdmins
@@ -21,11 +22,11 @@ class GetAllAdmins
     ) {
     }
 
-    public function handle(array $data = []): array
+    public function handle(AdminRequest $request): array
     {
         return $this->adminModel
             ->select(['id', 'username', 'name', 'avatar', 'email', 'phone', 'status', 'is_admin', 'last_login_time'])
-            ->when(isset($data['status']), fn ($q) => $q->where('status', (int) $data['status']))
+            ->when($request->status !== null, fn ($q) => $q->where('status', $request->status))
             ->orderBy('id', 'desc')
             ->get()
             ->toArray();

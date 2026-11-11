@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notify\NoticeModel;
 use App\Model\Notify\NoticeReadModel;
 
@@ -23,10 +24,10 @@ class MarkRead
     ) {
     }
 
-    public function handle(array $data): bool
+    public function handle(NoticeRequest $request): bool
     {
-        $noticeId = (int) ($data['notice_id'] ?? 0);
-        $userId = (int) ($data['user_id'] ?? 0);
+        $noticeId = (int) $request->notice_id;
+        $userId = (int) $request->user_id;
 
         requireId($userId, '用户');
 

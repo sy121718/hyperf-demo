@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\CronJob;
 
+use App\Dto\CronJob\CronJobRequest;
 use App\Model\CronJob\SysCronJobModel;
 
 class GetList
@@ -21,20 +22,17 @@ class GetList
     ) {
     }
 
-    public function handle(array $data): mixed
+    public function handle(CronJobRequest $request): mixed
     {
-        $search = $data['search'] ?? null;
-        $withDetail = ($data['with'] ?? '') === 'detail';
-
         // 列表页只查必要字段
-        $fields = $withDetail ? ['*'] : [
+        $fields = $request->withDetail() ? ['*'] : [
             'id', 'job_name', 'job_category', 'command', 'cron_expression', 'status', 'last_sync_time', 'create_time',
         ];
 
         return $this->cronJobModel
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny($this->cronJobModel->getSearchableFields(), 'like', "%{$search}%"))
-            ->sort($data)
-            ->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny($this->cronJobModel->getSearchableFields(), 'like', "%{$request->search}%"))
+            ->sort($request->toQueryArray())
+            ->paginate($request->pageSize(), $fields, 'page', $request->pageNumber());
     }
 }

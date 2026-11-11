@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notify\NoticeModel;
 use App\Model\Notify\NoticeReadModel;
 use Hyperf\Contract\LengthAwarePaginatorInterface;
@@ -27,19 +28,14 @@ class GetUserNotices
     /**
      * 返回分页器本身，由响应层裁剪成 {total, list}.
      */
-    public function handle(array $data): LengthAwarePaginatorInterface
+    public function handle(NoticeRequest $request, int $userId): LengthAwarePaginatorInterface
     {
-        $page = (int) ($data['page'] ?? 1);
-        $limit = (int) ($data['limit'] ?? 10);
-        $userId = (int) ($data['user_id'] ?? 0);
-        $noticeType = $data['notice_type'] ?? null;
-
         $paginator = $this->noticeModel
             ->published()
-            ->when($noticeType, fn ($q, $v) => $q->where('notice_type', $v))
+            ->when($request->notice_type, fn ($q, $v) => $q->where('notice_type', $v))
             ->orderBy('is_top', 'desc')
             ->orderBy('publish_time', 'desc')
-            ->paginate($limit, ['*'], 'page', $page);
+            ->paginate($request->pageSize(), ['*'], 'page', $request->pageNumber());
 
         if ($userId <= 0) {
             return $paginator;

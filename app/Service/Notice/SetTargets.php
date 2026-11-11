@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notify\NoticeModel;
 use App\Model\Notify\NoticeTargetModel;
 
@@ -23,11 +24,11 @@ class SetTargets
     ) {
     }
 
-    public function handle(array $data): bool
+    public function handle(NoticeRequest $request): bool
     {
-        $noticeId = (int) ($data['id'] ?? 0);
-        $targetType = (int) ($data['target_type'] ?? 0);
-        $targetIds = $data['target_ids'] ?? [];
+        $noticeId = (int) $request->id;
+        $targetType = (int) $request->target_type;
+        $targetIds = $request->target_ids ?? [];
 
         $notice = $this->noticeModel->findOrNotFound($noticeId, '通知');
 

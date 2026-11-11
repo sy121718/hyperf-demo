@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Attachment;
 
+use App\Dto\Attachment\AttachmentRequest;
 use App\Model\Attachment\SysAttachmentModel;
 
 class GetList
@@ -21,27 +22,24 @@ class GetList
     ) {
     }
 
-    public function handle(array $data): mixed
+    public function handle(AttachmentRequest $request): mixed
     {
-        $search = $data['search'] ?? null;
-        $withDetail = ($data['with'] ?? '') === 'detail';
-
         // 列表页只查必要字段，详情页才加载关联
-        $fields = $withDetail ? ['*'] : [
+        $fields = $request->withDetail() ? ['*'] : [
             'id', 'category_id', 'file_name', 'file_path', 'file_size',
             'file_type', 'mime_type', 'storage_type', 'status', 'create_time',
         ];
 
         $query = $this->attachmentModel
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny($this->attachmentModel->getSearchableFields(), 'like', "%{$search}%"))
-            ->sort($data);
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny($this->attachmentModel->getSearchableFields(), 'like', "%{$request->search}%"))
+            ->sort($request->toQueryArray());
 
         // 条件加载关联
-        if ($withDetail) {
+        if ($request->withDetail()) {
             $query->with(['category', 'creator']);
         }
 
-        return $query->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
+        return $query->paginate($request->pageSize(), $fields, 'page', $request->pageNumber());
     }
 }

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Admin\SysAdminSessionsModel;
 
@@ -23,10 +24,10 @@ class ForceLogout
     ) {
     }
 
-    public function handle(array $data): void
+    public function handle(AdminRequest $request): void
     {
-        $adminId = (int) ($data['admin_id'] ?? 0);
-        $sessionId = (int) ($data['session_id'] ?? 0);
+        $adminId = (int) $request->admin_id;
+        $sessionId = (int) $request->session_id;
 
         $admin = $this->adminModel->findOrNotFound($adminId, '管理员');
 

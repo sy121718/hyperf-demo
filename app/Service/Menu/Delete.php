@@ -24,9 +24,8 @@ class Delete
     ) {
     }
 
-    public function handle(array $data): bool
+    public function handle(int $id): bool
     {
-        $id = (int) ($data['id'] ?? 0);
         $menu = $this->menuModel->findOrNotFound($id, '菜单');
 
         Db::beginTransaction();

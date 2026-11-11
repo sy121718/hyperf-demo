@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Controller\System;
 
 use App\Controller\AbstractController;
+use App\Dto\Admin\AdminRequest;
 use App\Dto\Auth\LoginRequest;
 use App\Service\Admin\Auth as AuthAction;
 use App\Service\Admin\Profile as ProfileAction;
@@ -21,8 +22,7 @@ class AuthController extends AbstractController
 {
     public function login(LoginRequest $request): array
     {
-        $data = $request->validated();
-        $result = container()->get(AuthAction\Login::class)->handle($data);
+        $result = container()->get(AuthAction\Login::class)->handle($request);
         return $this->success($result, '登录成功');
     }
 
@@ -38,19 +38,15 @@ class AuthController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function updateProfile(): array
+    public function updateProfile(AdminRequest $request): array
     {
-        $data = $this->request->all();
-        container()->get(ProfileAction\UpdateProfile::class)->handle($data);
+        container()->get(ProfileAction\UpdateProfile::class)->handle($request);
         return $this->success(null, '更新成功');
     }
 
-    public function changePassword(): array
+    public function changePassword(AdminRequest $request): array
     {
-        $data = $this->request->all();
-        $oldPassword = $data['old_password'] ?? '';
-        $newPassword = $data['new_password'] ?? '';
-        container()->get(ProfileAction\ChangePassword::class)->handle($oldPassword, $newPassword);
+        container()->get(ProfileAction\ChangePassword::class)->handle($request);
         return $this->success(null, '密码修改成功');
     }
 }

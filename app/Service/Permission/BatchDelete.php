@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Permission;
 
 use App\Common\CacheKeys;
+use App\Dto\Permission\PermissionRequest;
 use App\Model\Rbac\SysPermissionDictModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
@@ -24,14 +25,14 @@ class BatchDelete
     ) {
     }
 
-    public function handle(array $data): int
+    public function handle(PermissionRequest $request): int
     {
         $isSuperAdmin = currentUser('is_admin') == 1;
         if (! $isSuperAdmin) {
             paramError('只有超级管理员可以批量删除权限', 403);
         }
 
-        $ids = $data['ids'] ?? [];
+        $ids = $request->ids ?? [];
         empty($ids) && paramError('权限ID不能为空');
 
         Db::beginTransaction();

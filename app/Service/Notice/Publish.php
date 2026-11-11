@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notify\NoticeModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
@@ -23,15 +24,15 @@ class Publish
     ) {
     }
 
-    public function handle(array $data): bool
+    public function handle(NoticeRequest $request): bool
     {
         Db::beginTransaction();
         try {
-            $notice = $this->noticeModel->findOrNotFound($data['id'], '通知');
+            $notice = $this->noticeModel->findOrNotFound($request->id, '通知');
 
             $notice->status == 1 && paramError('通知已发布');
 
-            $publishTime = $data['publish_time'] ?? date('Y-m-d H:i:s');
+            $publishTime = $request->publish_time ?? date('Y-m-d H:i:s');
 
             if (is_numeric($publishTime) && $publishTime > 1000000000) {
                 $seconds = $publishTime > 1000000000000 ? $publishTime / 1000 : $publishTime;

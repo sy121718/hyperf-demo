@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Cache;
 
 use App\Common\CacheKeys;
+use App\Dto\Cache\CacheRequest;
 
 class ClearCache
 {
@@ -31,8 +32,9 @@ class ClearCache
         'user_perm' => ['label' => '用户权限', 'keys' => [CacheKeys::PERM_CODES, CacheKeys::MENU_USER, CacheKeys::MENU_SUPER]],
     ];
 
-    public function handle(array $modules = []): array
+    public function handle(CacheRequest $request): array
     {
+        $modules = $request->modules ?? [];
         $targets = empty($modules) ? array_keys(self::MODULES) : $modules;
         $cleared = [];
         $totalDeleted = 0;

@@ -45,6 +45,8 @@ class AdminRequest extends BaseRequestDto
 
     public ?string $new_password = null;
 
+    public ?string $old_password = null;
+
     public ?int $session_id = null;
 
     public ?string $admin_code = null;
@@ -86,6 +88,16 @@ class AdminRequest extends BaseRequestDto
                 'admin_id' => 'required|integer|min:1',
                 'new_password' => 'required|string|min:6|max:100',
             ],
+            'updateProfile' => [
+                'name' => 'nullable|string|max:50',
+                'email' => 'nullable|email|max:100',
+                'phone' => 'nullable|string|max:20',
+                'avatar' => 'nullable|string|max:255',
+            ],
+            'changePassword' => [
+                'old_password' => 'required|string|max:100',
+                'new_password' => 'required|string|min:6|max:100',
+            ],
             'forceLogout' => [
                 'admin_id' => 'required|integer|min:1',
                 'session_id' => 'nullable|integer|min:1',
@@ -107,6 +119,6 @@ class AdminRequest extends BaseRequestDto
 
     protected function virtualFields(): array
     {
-        return ['id', 'role_ids', 'admin_id', 'new_password', 'session_id', 'admin_code', 'role_codes'];
+        return ['id', 'role_ids', 'admin_id', 'new_password', 'old_password', 'session_id', 'admin_code', 'role_codes'];
     }
 }

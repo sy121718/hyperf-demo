@@ -24,7 +24,7 @@ class AllRoles
     ) {
     }
 
-    public function handle(array $data = []): array
+    public function handle(): array
     {
         $cached = $this->cache->get(CacheKeys::ROLE_ALL);
         if ($cached !== null) {

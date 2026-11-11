@@ -45,8 +45,8 @@ class Update
 
         Db::beginTransaction();
         try {
+            // permission_codes 已在 virtualFields 里剔除，这里只需补 permission_code
             $updateData = $request->toDbArrayFiltered();
-            unset($updateData['permission_codes']);
 
             // 显式提交了 permission_codes 才更新权限标识
             if ($request->permission_codes !== null) {

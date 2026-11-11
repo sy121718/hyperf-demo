@@ -168,7 +168,7 @@ class PermissionTest extends TestCase
         $model->shouldReceive('where->pluck->toArray')->andReturn([]);
         $model->shouldReceive('whereIn->delete')->andReturn(1);
 
-        $this->assertTrue((new Delete($model))->handle(['id' => 5]));
+        $this->assertTrue((new Delete($model))->handle(5));
     }
 
     public function testDeletePermissionNotFound(): void
@@ -180,7 +180,7 @@ class PermissionTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new Delete($model))->handle(['id' => 999]);
+        (new Delete($model))->handle(999);
     }
 
     public function testDeletePermissionZeroId(): void
@@ -192,7 +192,7 @@ class PermissionTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('权限ID不能为空');
 
-        (new Delete($model))->handle(['id' => 0]);
+        (new Delete($model))->handle(0);
     }
 
     // ==================== GetInfo ====================

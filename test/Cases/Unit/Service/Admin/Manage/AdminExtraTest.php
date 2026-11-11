@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Admin\SysAdminSessionsModel;
@@ -56,7 +57,7 @@ class AdminExtraTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
-        (new BanAdmin($model))->handle(['id' => 5]);
+        (new BanAdmin($model))->handle(5);
 
         $this->assertSame(0, $admin->status);
     }
@@ -71,7 +72,7 @@ class AdminExtraTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new BanAdmin($model))->handle(['id' => 999]);
+        (new BanAdmin($model))->handle(999);
     }
 
     public function testBanAdminZeroId(): void
@@ -83,7 +84,7 @@ class AdminExtraTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        (new BanAdmin($model))->handle(['id' => 0]);
+        (new BanAdmin($model))->handle(0);
     }
 
     public function testBanSuperAdminFails(): void
@@ -97,7 +98,7 @@ class AdminExtraTest extends TestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('超级管理员不能封禁');
 
-        (new BanAdmin($model))->handle(['id' => 1]);
+        (new BanAdmin($model))->handle(1);
     }
 
     public function testBanAdminMissingId(): void
@@ -108,7 +109,7 @@ class AdminExtraTest extends TestCase
 
         $this->expectException(BusinessException::class);
 
-        (new BanAdmin($model))->handle([]);
+        (new BanAdmin($model))->handle(0);
     }
 
     // ==================== UnbanAdmin ====================
@@ -121,7 +122,7 @@ class AdminExtraTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
-        (new UnbanAdmin($model))->handle(['id' => 5]);
+        (new UnbanAdmin($model))->handle(5);
 
         $this->assertSame(1, $admin->status);
         $this->assertSame(0, $admin->login_failure_count);
@@ -137,7 +138,7 @@ class AdminExtraTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new UnbanAdmin($model))->handle(['id' => 999]);
+        (new UnbanAdmin($model))->handle(999);
     }
 
     public function testUnbanAdminZeroId(): void
@@ -148,7 +149,7 @@ class AdminExtraTest extends TestCase
 
         $this->expectException(BusinessException::class);
 
-        (new UnbanAdmin($model))->handle(['id' => 0]);
+        (new UnbanAdmin($model))->handle(0);
     }
 
     // ==================== ForceLogout ====================
@@ -166,7 +167,7 @@ class AdminExtraTest extends TestCase
         $sessModel = Mockery::mock(SysAdminSessionsModel::class);
         $sessModel->shouldReceive('where')->with('admin_id', 5)->andReturn($sessBuilder);
 
-        (new ForceLogout($model, $sessModel))->handle(['admin_id' => 5]);
+        (new ForceLogout($model, $sessModel))->handle(AdminRequest::fromArray(['admin_id' => 5]));
 
         $this->assertTrue(true);
     }
@@ -185,7 +186,7 @@ class AdminExtraTest extends TestCase
         $sessModel = Mockery::mock(SysAdminSessionsModel::class);
         $sessModel->shouldReceive('where')->with('admin_id', 5)->andReturn($sessBuilder);
 
-        (new ForceLogout($model, $sessModel))->handle(['admin_id' => 5, 'session_id' => 10]);
+        (new ForceLogout($model, $sessModel))->handle(AdminRequest::fromArray(['admin_id' => 5, 'session_id' => 10]));
 
         $this->assertTrue(true);
     }
@@ -201,7 +202,7 @@ class AdminExtraTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new ForceLogout($model, $sessModel))->handle(['admin_id' => 999]);
+        (new ForceLogout($model, $sessModel))->handle(AdminRequest::fromArray(['admin_id' => 999]));
     }
 
     public function testForceLogoutZeroAdminId(): void
@@ -214,7 +215,7 @@ class AdminExtraTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        (new ForceLogout($model, $sessModel))->handle(['admin_id' => 0]);
+        (new ForceLogout($model, $sessModel))->handle(AdminRequest::fromArray(['admin_id' => 0]));
     }
 
     // ==================== ResetFailureCount ====================
@@ -227,7 +228,7 @@ class AdminExtraTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(5, '管理员')->andReturn($admin);
 
-        (new ResetFailureCount($model))->handle(['id' => 5]);
+        (new ResetFailureCount($model))->handle(5);
 
         $this->assertSame(0, $admin->login_failure_count);
     }
@@ -242,7 +243,7 @@ class AdminExtraTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        (new ResetFailureCount($model))->handle(['id' => 999]);
+        (new ResetFailureCount($model))->handle(999);
     }
 
     public function testResetFailureCountZeroId(): void
@@ -253,7 +254,7 @@ class AdminExtraTest extends TestCase
 
         $this->expectException(BusinessException::class);
 
-        (new ResetFailureCount($model))->handle(['id' => 0]);
+        (new ResetFailureCount($model))->handle(0);
     }
 
     // ==================== GetAllAdmins ====================
@@ -276,7 +277,7 @@ class AdminExtraTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('select')->andReturn($builder);
 
-        $result = (new GetAllAdmins($model))->handle();
+        $result = (new GetAllAdmins($model))->handle(AdminRequest::fromArray([]));
 
         $this->assertCount(2, $result);
     }
@@ -300,7 +301,7 @@ class AdminExtraTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('select')->andReturn($builder);
 
-        $result = (new GetAllAdmins($model))->handle(['status' => 1]);
+        $result = (new GetAllAdmins($model))->handle(AdminRequest::fromArray(['status' => 1]));
 
         $this->assertIsArray($result);
     }

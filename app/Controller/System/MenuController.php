@@ -21,7 +21,7 @@ class MenuController extends AbstractController
 {
     public function tree(MenuRequest $request): array
     {
-        $result = container()->get(MenuAction\GetTree::class)->handle($request->toQueryArray());
+        $result = container()->get(MenuAction\GetTree::class)->handle($request);
         return $this->success(MenuResponse::collection($result), '获取成功');
     }
 
@@ -42,7 +42,7 @@ class MenuController extends AbstractController
     public function delete(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(MenuAction\Delete::class)->handle(['id' => $id]);
+        container()->get(MenuAction\Delete::class)->handle($id);
         return $this->success(null, '删除成功');
     }
 
@@ -55,7 +55,7 @@ class MenuController extends AbstractController
 
     public function batchDelete(MenuRequest $request): array
     {
-        $result = container()->get(MenuAction\BatchDelete::class)->handle($request->toArray());
+        $result = container()->get(MenuAction\BatchDelete::class)->handle($request);
         return $this->success(['deleted' => $result], '批量删除成功');
     }
 }

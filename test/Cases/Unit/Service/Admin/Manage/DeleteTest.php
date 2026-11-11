@@ -50,7 +50,7 @@ class DeleteTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
-        $result = $this->buildAction($model)->handle(['id' => 10]);
+        $result = $this->buildAction($model)->handle(10);
 
         $this->assertTrue($result);
     }
@@ -67,7 +67,7 @@ class DeleteTest extends TestCase
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
-        $this->buildAction($model)->handle(['id' => 10]);
+        $this->buildAction($model)->handle(10);
 
         $this->assertTrue($deleteCalled);
     }
@@ -83,7 +83,7 @@ class DeleteTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction($model)->handle(['id' => 0]);
+        $this->buildAction($model)->handle(0);
     }
 
     public function testDeleteFailsWithMissingId(): void
@@ -95,7 +95,7 @@ class DeleteTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionMessage('管理员ID不能为空');
 
-        $this->buildAction($model)->handle([]);
+        $this->buildAction($model)->handle(0);
     }
 
     public function testDeleteFailsWhenAdminNotFound(): void
@@ -108,7 +108,7 @@ class DeleteTest extends TestCase
         $this->expectException(BusinessException::class);
         $this->expectExceptionCode(404);
 
-        $this->buildAction($model)->handle(['id' => 999]);
+        $this->buildAction($model)->handle(999);
     }
 
     public function testDeleteFailsForSuperAdmin(): void
@@ -121,7 +121,7 @@ class DeleteTest extends TestCase
         $this->expectExceptionCode(403);
         $this->expectExceptionMessage('不能删除超级管理员');
 
-        $this->buildAction($model)->handle(['id' => 10]);
+        $this->buildAction($model)->handle(10);
     }
 
     public function testDeleteSuperAdminDoesNotDeleteAnything(): void
@@ -132,7 +132,7 @@ class DeleteTest extends TestCase
         $model->shouldReceive('findOrNotFound')->with(10, '管理员')->andReturn($admin);
 
         try {
-            $this->buildAction($model)->handle(['id' => 10]);
+            $this->buildAction($model)->handle(10);
         } catch (BusinessException) {
         }
 
@@ -160,7 +160,7 @@ class DeleteTest extends TestCase
         $this->mockDeleteChain($sessionModel);
 
         $action = new Delete($model, $roleModel, $sessionModel);
-        $action->handle(['id' => 10]);
+        $action->handle(10);
 
         $this->assertTrue($roleDel);
     }
@@ -184,7 +184,7 @@ class DeleteTest extends TestCase
         $sessionModel->shouldReceive('where')->with('admin_id', 10)->andReturn($sessionBuilder);
 
         $action = new Delete($model, $roleModel, $sessionModel);
-        $action->handle(['id' => 10]);
+        $action->handle(10);
 
         $this->assertTrue($sessionDel);
     }

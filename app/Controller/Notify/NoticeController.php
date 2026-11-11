@@ -42,7 +42,7 @@ class NoticeController extends AbstractController
 
     public function publish(NoticeRequest $request): array
     {
-        container()->get(NoticeAction\Publish::class)->handle($request->toArray());
+        container()->get(NoticeAction\Publish::class)->handle($request);
         return $this->success(null, '发布成功');
     }
 
@@ -56,23 +56,21 @@ class NoticeController extends AbstractController
 
     public function setTargets(NoticeRequest $request): array
     {
-        container()->get(NoticeAction\SetTargets::class)->handle($request->toArray());
+        container()->get(NoticeAction\SetTargets::class)->handle($request);
         return $this->success(null, '设置成功');
     }
 
     public function markRead(NoticeRequest $request): array
     {
-        container()->get(NoticeAction\MarkRead::class)->handle($request->toArray());
+        container()->get(NoticeAction\MarkRead::class)->handle($request);
         return $this->success(null, '标记成功');
     }
 
     public function userNotices(NoticeRequest $request): array
     {
         // 普通用户只能查自己的通知，userId 由登录态决定
-        $data = $request->toQueryArray();
-        $data['user_id'] = (int) currentUser('id');
-
-        $result = container()->get(NoticeAction\GetUserNotices::class)->handle($data);
+        $result = container()->get(NoticeAction\GetUserNotices::class)
+            ->handle($request, (int) currentUser('id'));
         return $this->success(NoticeResponse::page($result), '获取成功');
     }
 
@@ -85,13 +83,13 @@ class NoticeController extends AbstractController
 
     public function statistics(NoticeRequest $request): array
     {
-        $result = container()->get(NoticeAction\GetStatistics::class)->handle($request->toQueryArray());
+        $result = container()->get(NoticeAction\GetStatistics::class)->handle($request);
         return $this->success($result, '获取成功');
     }
 
     public function batchPush(NoticeRequest $request): array
     {
-        $result = container()->get(NoticeAction\BatchPushToUsers::class)->handle($request->toArray());
+        $result = container()->get(NoticeAction\BatchPushToUsers::class)->handle($request);
         return $this->success(['count' => $result], '推送成功');
     }
 }

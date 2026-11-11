@@ -21,7 +21,7 @@ class RoleController extends AbstractController
 {
     public function list(RoleRequest $request): array
     {
-        $result = container()->get(RoleAction\GetList::class)->handle($request->toQueryArray());
+        $result = container()->get(RoleAction\GetList::class)->handle($request);
         return $this->success(RoleResponse::page($result), '获取成功');
     }
 
@@ -42,7 +42,7 @@ class RoleController extends AbstractController
     public function delete(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(RoleAction\Delete::class)->handle(['id' => $id]);
+        container()->get(RoleAction\Delete::class)->handle($id);
         return $this->success(null, '删除成功');
     }
 
@@ -74,19 +74,19 @@ class RoleController extends AbstractController
 
     public function assignToAdmin(RoleRequest $request): array
     {
-        $result = container()->get(RoleAction\AssignRolesToAdmin::class)->handle($request->toArray());
+        $result = container()->get(RoleAction\AssignRolesToAdmin::class)->handle($request);
         return $this->success($result, '分配成功');
     }
 
     public function removeFromAdmin(RoleRequest $request): array
     {
-        $result = container()->get(RoleAction\RemoveRoleFromAdmin::class)->handle($request->toArray());
+        $result = container()->get(RoleAction\RemoveRoleFromAdmin::class)->handle($request);
         return $this->success($result, '移除成功');
     }
 
     public function batchDelete(RoleRequest $request): array
     {
-        $result = container()->get(RoleAction\BatchDelete::class)->handle($request->toArray());
+        $result = container()->get(RoleAction\BatchDelete::class)->handle($request);
         return $this->success(['deleted' => $result], '批量删除成功');
     }
 }

@@ -21,7 +21,7 @@ class PermissionController extends AbstractController
 {
     public function tree(PermissionRequest $request): array
     {
-        $result = container()->get(PermAction\GetTreeList::class)->handle($request->toQueryArray());
+        $result = container()->get(PermAction\GetTreeList::class)->handle($request);
         return $this->success(PermissionResponse::collection($result), '获取成功');
     }
 
@@ -42,7 +42,7 @@ class PermissionController extends AbstractController
     public function delete(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(PermAction\Delete::class)->handle(['id' => $id]);
+        container()->get(PermAction\Delete::class)->handle($id);
         return $this->success(null, '删除成功');
     }
 
@@ -61,7 +61,7 @@ class PermissionController extends AbstractController
 
     public function batchDelete(PermissionRequest $request): array
     {
-        $result = container()->get(PermAction\BatchDelete::class)->handle($request->toArray());
+        $result = container()->get(PermAction\BatchDelete::class)->handle($request);
         return $this->success(['deleted' => $result], '批量删除成功');
     }
 

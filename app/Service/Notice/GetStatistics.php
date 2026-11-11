@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Notice;
 
+use App\Dto\Notice\NoticeRequest;
 use App\Model\Notify\NoticeModel;
 use Hyperf\DbConnection\Db;
 
@@ -24,10 +25,10 @@ class GetStatistics
     ) {
     }
 
-    public function handle(array $data): array
+    public function handle(NoticeRequest $request): array
     {
-        $startDate = $data['start_date'] ?? date('Y-m-d', strtotime('-30 days'));
-        $endDate = $data['end_date'] ?? date('Y-m-d');
+        $startDate = $request->start_date ?? date('Y-m-d', strtotime('-30 days'));
+        $endDate = $request->end_date ?? date('Y-m-d');
 
         $startTime = $startDate . ' 00:00:00';
         $endTime = $endDate . ' 23:59:59';

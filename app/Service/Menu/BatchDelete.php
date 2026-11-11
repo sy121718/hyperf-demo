@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace App\Service\Menu;
 
 use App\Common\CacheKeys;
+use App\Dto\Menu\MenuRequest;
 use App\Model\Rbac\SysMenuModel;
 use Hyperf\DbConnection\Db;
 use Throwable;
@@ -24,9 +25,9 @@ class BatchDelete
     ) {
     }
 
-    public function handle(array $data): int
+    public function handle(MenuRequest $request): int
     {
-        $ids = $data['ids'] ?? [];
+        $ids = $request->ids ?? [];
         empty($ids) && paramError('请选择要删除的菜单');
 
         Db::beginTransaction();

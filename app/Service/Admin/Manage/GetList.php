@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Manage;
 
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 
 class GetList
@@ -21,25 +22,22 @@ class GetList
     ) {
     }
 
-    public function handle(array $data = []): mixed
+    public function handle(AdminRequest $request): mixed
     {
-        $search = $data['search'] ?? null;
-        $withDetail = ($data['with'] ?? '') === 'detail';
-
         // 列表页只查必要字段
-        $fields = $withDetail ? ['*'] : [
+        $fields = $request->withDetail() ? ['*'] : [
             'id', 'username', 'name', 'email', 'phone', 'status',
             'is_admin', 'last_login_ip', 'last_login_time', 'create_time',
         ];
 
         return $this->adminModel
-            ->filter($data)
-            ->when($search, fn ($q) => $q->whereAny(
+            ->filter($request->toQueryArray())
+            ->when($request->search, fn ($q) => $q->whereAny(
                 $this->adminModel->getSearchableFields(),
                 'like',
-                "%{$search}%"
+                "%{$request->search}%"
             ))
-            ->sort($data)
-            ->paginate((int) ($data['limit'] ?? 10), $fields, 'page', (int) ($data['page'] ?? 1));
+            ->sort($request->toQueryArray())
+            ->paginate($request->pageSize(), $fields, 'page', $request->pageNumber());
     }
 }

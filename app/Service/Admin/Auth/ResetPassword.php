@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace App\Service\Admin\Auth;
 
+use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 
 class ResetPassword
@@ -23,16 +24,14 @@ class ResetPassword
 
     /**
      * 重置管理员密码
-     *
-     * @param array $data 包含 admin_id, new_password
      */
-    public function handle(array $data): void
+    public function handle(AdminRequest $request): void
     {
         $isSuperAdmin = currentUser('is_admin');
         $currentUserId = (int) currentUser('id');
 
-        $adminId = (int) ($data['admin_id'] ?? 0);
-        $newPassword = $data['new_password'] ?? '';
+        $adminId = (int) $request->admin_id;
+        $newPassword = (string) $request->new_password;
 
         ! empty($newPassword) || paramError('新密码不能为空');
 

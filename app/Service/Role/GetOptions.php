@@ -24,7 +24,7 @@ class GetOptions
     ) {
     }
 
-    public function handle(array $data = []): array
+    public function handle(): array
     {
         $cached = $this->cache->get(CacheKeys::ROLE_OPTIONS);
         if ($cached !== null) {

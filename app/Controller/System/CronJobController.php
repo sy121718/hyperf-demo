@@ -21,7 +21,7 @@ class CronJobController extends AbstractController
 {
     public function list(CronJobRequest $request): array
     {
-        $result = container()->get(CronJobAction\GetList::class)->handle($request->toQueryArray());
+        $result = container()->get(CronJobAction\GetList::class)->handle($request);
         return $this->success(CronJobResponse::page($result), '获取成功');
     }
 
@@ -62,12 +62,7 @@ class CronJobController extends AbstractController
 
     public function batchUpdate(CronJobRequest $request): array
     {
-        // ids 是业务字段（虚拟字段），toArray 才能拿到
-        $data = array_filter($request->toArray(), static fn ($v) => $v !== null);
-        $ids = $data['ids'] ?? [];
-        unset($data['ids'], $data['id']);
-
-        $result = container()->get(CronJobAction\BatchUpdate::class)->handle($ids, $data);
+        $result = container()->get(CronJobAction\BatchUpdate::class)->handle($request);
         return $this->success(['updated' => $result], '批量更新成功');
     }
 }

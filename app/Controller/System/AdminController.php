@@ -23,7 +23,7 @@ class AdminController extends AbstractController
 {
     public function list(AdminRequest $request): array
     {
-        $result = container()->get(ManageAction\GetList::class)->handle($request->toQueryArray());
+        $result = container()->get(ManageAction\GetList::class)->handle($request);
         return $this->success(AdminResponse::page($result), '获取成功');
     }
 
@@ -44,7 +44,7 @@ class AdminController extends AbstractController
     public function delete(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(ManageAction\Delete::class)->handle(['id' => $id]);
+        container()->get(ManageAction\Delete::class)->handle($id);
         return $this->success(null, '删除成功');
     }
 
@@ -57,34 +57,34 @@ class AdminController extends AbstractController
 
     public function resetPassword(AdminRequest $request): array
     {
-        container()->get(AuthAction\ResetPassword::class)->handle($request->toArray());
+        container()->get(AuthAction\ResetPassword::class)->handle($request);
         return $this->success(null, '密码重置成功');
     }
 
     public function ban(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(ManageAction\BanAdmin::class)->handle(['id' => $id]);
+        container()->get(ManageAction\BanAdmin::class)->handle($id);
         return $this->success(null, '封禁成功');
     }
 
     public function unban(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(ManageAction\UnbanAdmin::class)->handle(['id' => $id]);
+        container()->get(ManageAction\UnbanAdmin::class)->handle($id);
         return $this->success(null, '解封成功');
     }
 
     public function forceLogout(AdminRequest $request): array
     {
-        container()->get(ManageAction\ForceLogout::class)->handle($request->toArray());
+        container()->get(ManageAction\ForceLogout::class)->handle($request);
         return $this->success(null, '已强制下线');
     }
 
     public function resetFailure(): array
     {
         $id = (int) $this->request->route('id', 0);
-        container()->get(ManageAction\ResetFailureCount::class)->handle(['id' => $id]);
+        container()->get(ManageAction\ResetFailureCount::class)->handle($id);
         return $this->success(null, '已重置');
     }
 
@@ -94,9 +94,9 @@ class AdminController extends AbstractController
         return $this->success($result, '获取成功');
     }
 
-    public function all(): array
+    public function all(AdminRequest $request): array
     {
-        $result = container()->get(ManageAction\GetAllAdmins::class)->handle($this->request->all());
+        $result = container()->get(ManageAction\GetAllAdmins::class)->handle($request);
         return $this->success(AdminResponse::collection($result), '获取成功');
     }
 
@@ -130,13 +130,13 @@ class AdminController extends AbstractController
 
     public function assignRoles(AdminRequest $request): array
     {
-        $result = container()->get(AdminPermAction\AssignRoles::class)->handle($request->toArray());
+        $result = container()->get(AdminPermAction\AssignRoles::class)->handle($request);
         return $this->success($result, '分配成功');
     }
 
     public function revokeRole(AdminRequest $request): array
     {
-        $result = container()->get(AdminPermAction\RevokeRole::class)->handle($request->toArray());
+        $result = container()->get(AdminPermAction\RevokeRole::class)->handle($request);
         return $this->success($result, '移除成功');
     }
 }
