@@ -1,0 +1,14 @@
+packages:
+  - Admin
+  - Index
+  - Shared
+
+# 不要把 node-linker 改成 hoisted：会把真实依赖摊平进 node_modules，
+# 导致 Hyperf 注解扫描与 php-cs-fixer 的遍历成本明显上升。
+nodeLinker: isolated
+
+# 共享包通过 workspace 协议引用，禁止发布到公共 registry
+linkWorkspacePackages: true
+
+minimumReleaseAgeExclude:
+  - vite@8.3.8

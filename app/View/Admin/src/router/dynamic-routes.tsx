@@ -1,0 +1,52 @@
+import { lazy, Suspense, type ComponentType, type ReactElement } from "react";
+
+import NotFoundPage from "@/pages/not-found";
+import { isRoutableMenu, type MenuNode } from "@/types/menu";
+import { resolvePage } from "@/router/pages";
+
+/** 把后端菜单树摊平成可路由节点（只保留菜单/页面且配了 path、component 的） */
+function flatten(menus: MenuNode[]): MenuNode[] {
+  const result: MenuNode[] = [];
+  const walk = (nodes: MenuNode[]): void => {
+    for (const node of nodes) {
+      if (isRoutableMenu(node) && node.path && node.component) {
+        result.push(node);
+      }
+      if (node.children?.length) {
+        walk(node.children);
+      }
+    }
+  };
+  walk(menus);
+  return result;
+}
+
+function LazyPage({ component }: { component: string }) {
+  const loader = resolvePage(component);
+  if (!loader) {
+    // 后端配了组件但前端没有对应文件：明确提示，不白屏
+    console.warn(`[router] 菜单组件未找到：${component}`);
+    return <NotFoundPage />;
+  }
+  const Component = lazy(loader as () => Promise<{ default: ComponentType }>);
+  return (
+    <Suspense fallback={<div className="p-6 text-muted-foreground">加载中…</div>}>
+      <Component />
+    </Suspense>
+  );
+}
+
+export interface DynamicRoute {
+  /** 相对 /admin 的路径，如 "system/admin" */
+  path: string;
+  element: ReactElement;
+}
+
+/** 生成挂在 AdminLayout 下的子路由 */
+export function buildDynamicRoutes(menus: MenuNode[]): DynamicRoute[] {
+  return flatten(menus).map((node) => ({
+    // 后端 path 以 / 开头，去掉后作为 /admin 下的相对路径
+    path: (node.path as string).replace(/^\/+/, ""),
+    element: <LazyPage component={node.component as string} />,
+  }));
+}

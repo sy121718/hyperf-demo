@@ -1,0 +1,24 @@
+{
+  "name": "rbac-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:admin": "pnpm --filter @rbac/admin dev",
+    "dev:index": "pnpm --filter @rbac/index dev",
+    "build": "pnpm --filter @rbac/index build && pnpm --filter @rbac/admin build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.14.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.72.2"
+  }
+}
