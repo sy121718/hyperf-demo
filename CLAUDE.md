@@ -2,13 +2,13 @@
 
 ## 项目概述
 
-**技术栈**: Hyperf 3.1 + PHP 8.3 + Swoole 6.1 + MySQL + JWT + Vue
+**技术栈**: Hyperf 3.2 + PHP 8.5 + Swoole 6.2 + MySQL + JWT + Vue
 **数据库**: `hyper`
 
 ## 核心规范
 
 ### 代码规范
-- **PHP**: 8.3+, **Hyperf**: 3.1, **Swoole**: 6.1
+- **PHP**: 8.5+, **Hyperf**: 3.2, **Swoole**: 6.2
 - **编码**: PSR-12
 - **类型**: 必须开启 `declare(strict_types=1);`，完整类型注解
 - **测试**: 每个 Action 必须有完善的单元测试

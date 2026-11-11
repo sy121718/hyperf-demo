@@ -8,7 +8,7 @@ Hyperf has some requirements for the system environment, it can only run under L
 
 You need to make sure that your operating environment meets the following requirements:  
 
- - PHP >= 8.1
+ - PHP >= 8.2
  - Any of the following network engines
    - Swoole PHP extension >= 5.0，with `swoole.use_shortname` set to `Off` in your `php.ini`
    - Swow PHP extension >= 1.3
