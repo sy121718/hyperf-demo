@@ -34,7 +34,10 @@ class RemoveRoleFromAdmin
 
         $role = $this->roleModel->findOrNotFound($roleId, '角色');
 
-        $admin->roles()->detach($roleId);
+        // 关联键是 role_code 不是自增 id：roles() 的 belongsToMany 以
+        // sys_admin_role.role_code ↔ sys_role.role_code 连接，detach() 按 role_code 列
+        // 匹配。传 id 会 detach 不掉任何记录，接口却返回成功，角色实际还在。
+        $admin->roles()->detach($role->role_code);
 
         CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
 

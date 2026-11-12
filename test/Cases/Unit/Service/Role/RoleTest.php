@@ -355,9 +355,12 @@ class RoleTest extends TestCase
     public function testRemoveRoleFromAdminSuccess(): void
     {
         $admin = Mockery::mock(SysAdminModel::class)->makePartial();
-        $admin->shouldReceive('roles->detach')->once()->with(9)->andReturn(true);
+        // 关联键是 role_code，detach 必须传角色标识而不是 id
+        $admin->shouldReceive('roles->detach')->once()->with('ops_admin')->andReturn(true);
 
         $role = Mockery::mock(SysRoleModel::class)->makePartial();
+        $role->role_code = 'ops_admin';
+        $role->shouldReceive('getAttribute')->with('role_code')->andReturn('ops_admin');
 
         $adminModel = Mockery::mock(SysAdminModel::class);
         $adminModel->shouldReceive('findOrNotFound')->with(1, '管理员')->andReturn($admin);
