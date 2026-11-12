@@ -189,17 +189,20 @@ class NoticeTest extends TestCase
 
     // ==================== GetUnreadCount ====================
 
+    /**
+     * 未读数直接数「已发布且该用户没读过」的通知条数.
+     */
     public function testGetUnreadCount(): void
     {
         $noticeModel = Mockery::mock(NoticeModel::class);
         // 未读数与列表共用 published 口径，不能再各自拼 status/expire_time
-        $noticeModel->shouldReceive('published->count')->andReturn(10);
+        $noticeModel->shouldReceive('published->whereNotExists->count')->andReturn(7);
 
         $readModel = Mockery::mock(NoticeReadModel::class);
-        $readModel->shouldReceive('where->count')->andReturn(3);
+        $readModel->shouldReceive('getTable')->andReturn('notice_read');
 
         $action = new GetUnreadCount($noticeModel, $readModel);
-        $this->assertEquals(7, $action->handle(1));
+        $this->assertSame(7, $action->handle(1));
     }
 
     public function testGetUnreadCountZeroUser(): void
@@ -216,13 +219,13 @@ class NoticeTest extends TestCase
     public function testGetUnreadCountAllRead(): void
     {
         $noticeModel = Mockery::mock(NoticeModel::class);
-        $noticeModel->shouldReceive('published->count')->andReturn(5);
+        $noticeModel->shouldReceive('published->whereNotExists->count')->andReturn(0);
 
         $readModel = Mockery::mock(NoticeReadModel::class);
-        $readModel->shouldReceive('where->count')->andReturn(10);
+        $readModel->shouldReceive('getTable')->andReturn('notice_read');
 
         $action = new GetUnreadCount($noticeModel, $readModel);
-        $this->assertEquals(0, $action->handle(1));
+        $this->assertSame(0, $action->handle(1));
     }
 
     // ==================== SetTargets ====================
