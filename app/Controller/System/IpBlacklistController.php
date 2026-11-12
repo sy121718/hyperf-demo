@@ -15,31 +15,31 @@ namespace App\Controller\System;
 use App\Controller\AbstractController;
 use App\Dto\IpBlacklist\IpBlacklistRequest;
 use App\Dto\IpBlacklist\IpBlacklistResponse;
-use App\Service\IpBlacklist as IpAction;
+use App\Service\IpBlacklist as IpBlacklistAction;
 
 class IpBlacklistController extends AbstractController
 {
     public function list(IpBlacklistRequest $request): array
     {
-        $result = container()->get(IpAction\GetList::class)->handle($request);
+        $result = container()->get(IpBlacklistAction\GetList::class)->handle($request);
         return $this->success(IpBlacklistResponse::page($result), '获取成功');
     }
 
     public function ban(IpBlacklistRequest $request): array
     {
-        $result = container()->get(IpAction\Ban::class)->handle($request);
+        $result = container()->get(IpBlacklistAction\Ban::class)->handle($request);
         return $this->success(IpBlacklistResponse::saved($result), '拉黑成功');
     }
 
     public function unban(IpBlacklistRequest $request): array
     {
-        $result = container()->get(IpAction\Unban::class)->handle((int) $request->id);
+        $result = container()->get(IpBlacklistAction\Unban::class)->handle((int) $request->id);
         return $this->success(IpBlacklistResponse::saved($result), '解除拉黑成功');
     }
 
     public function check(IpBlacklistRequest $request): array
     {
-        $result = container()->get(IpAction\CheckIp::class)->handle((string) $request->ip_address);
+        $result = container()->get(IpBlacklistAction\CheckIp::class)->handle((string) $request->ip_address);
 
         return $this->success([
             'is_banned' => $result !== null,

@@ -17,7 +17,7 @@ use App\Dto\Admin\AdminRequest;
 use App\Dto\Admin\AdminResponse;
 use App\Service\Admin\Auth as AuthAction;
 use App\Service\Admin\Manage as ManageAction;
-use App\Service\Admin\Permission as AdminPermAction;
+use App\Service\Admin\Permission as PermissionAction;
 
 class AdminController extends AbstractController
 {
@@ -117,26 +117,26 @@ class AdminController extends AbstractController
     public function getRoles(): array
     {
         $id = (int) $this->request->route('id', 0);
-        $result = container()->get(AdminPermAction\GetRoles::class)->handle($id);
+        $result = container()->get(PermissionAction\GetRoles::class)->handle($id);
         return $this->success($result, '获取成功');
     }
 
     public function getPermissions(): array
     {
         $id = (int) $this->request->route('id', 0);
-        $result = container()->get(AdminPermAction\GetPermissions::class)->handle($id);
+        $result = container()->get(PermissionAction\GetPermissions::class)->handle($id);
         return $this->success($result, '获取成功');
     }
 
     public function assignRoles(AdminRequest $request): array
     {
-        $result = container()->get(AdminPermAction\AssignRoles::class)->handle($request);
+        $result = container()->get(PermissionAction\AssignRoles::class)->handle($request);
         return $this->success($result, '分配成功');
     }
 
     public function revokeRole(AdminRequest $request): array
     {
-        $result = container()->get(AdminPermAction\RevokeRole::class)->handle($request);
+        $result = container()->get(PermissionAction\RevokeRole::class)->handle($request);
         return $this->success($result, '移除成功');
     }
 }

@@ -72,9 +72,10 @@ public function login(LoginRequest $request): array
 ```
 
 **命名规范**：
-- 别名：子模块名 + `Action` 后缀（如 `AuthAction`）
+- 别名：**命名空间最后一段** + `Action` 后缀（如 `Admin\Auth` → `AuthAction`，`Ops\LoginLog` → `LoginLogAction`）
 - 引用：`use App\Service\{模块}\{子模块} as {子模块}Action;`
 - 调用：`container()->get({别名}\{Action类名}::class)->handle($data)`
+- 反例：`as IpAction`、`as PermAction`、`as AdminPermAction` —— 别名必须能原样还原成命名空间末段，不做缩写
 
 **禁止事项**：
 - 禁止创建 `{模块}Service` 聚合类

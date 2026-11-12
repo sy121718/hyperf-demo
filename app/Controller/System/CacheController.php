@@ -14,7 +14,7 @@ namespace App\Controller\System;
 
 use App\Controller\AbstractController;
 use App\Dto\Cache\CacheRequest;
-use App\Service\Cache\ClearCache;
+use App\Service\Cache as CacheAction;
 
 class CacheController extends AbstractController
 {
@@ -24,7 +24,7 @@ class CacheController extends AbstractController
      */
     public function modules(): array
     {
-        $modules = container()->get(ClearCache::class)->getModules();
+        $modules = container()->get(CacheAction\ClearCache::class)->getModules();
         return $this->success($modules);
     }
 
@@ -41,7 +41,7 @@ class CacheController extends AbstractController
             paramError('只有超级管理员可以清除缓存', 403);
         }
 
-        $result = container()->get(ClearCache::class)->handle($request);
+        $result = container()->get(CacheAction\ClearCache::class)->handle($request);
 
         $msg = $result['is_full_clear'] ? '全部缓存已清除' : '选中模块缓存已清除';
 
