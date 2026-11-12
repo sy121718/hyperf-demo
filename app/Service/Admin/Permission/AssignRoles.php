@@ -17,6 +17,7 @@ use App\Dto\Admin\AdminRequest;
 use App\Model\Admin\SysAdminModel;
 use App\Model\Admin\SysAdminRoleModel;
 use App\Model\Rbac\SysRoleModel;
+use Hyperf\DbConnection\Db;
 
 class AssignRoles
 {
@@ -49,15 +50,18 @@ class AssignRoles
         $roles = $this->roleModel->whereIn('role_code', $roleCodes)->get();
         $roles->count() === count($roleCodes) || paramError('部分角色不存在');
 
-        // 删除旧关联，创建新关联
-        $this->adminRoleModel->where('admin_code', $adminCode)->delete();
-        foreach ($roleCodes as $roleCode) {
-            $this->adminRoleModel->create([
+        // 删除旧关联、创建新关联必须在同一事务里，否则中途失败会留下「角色被清空」的中间态
+        $operatorId = (int) currentUser('id');
+        Db::transaction(function () use ($adminCode, $roleCodes, $operatorId) {
+            $this->adminRoleModel->where('admin_code', $adminCode)->delete();
+
+            $rows = array_map(static fn (string $roleCode) => [
                 'admin_code' => $adminCode,
                 'role_code' => $roleCode,
-                'create_by' => (int) currentUser('id'),
-            ]);
-        }
+                'create_by' => $operatorId,
+            ], $roleCodes);
+            $this->adminRoleModel->insert($rows);
+        });
 
         CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
 

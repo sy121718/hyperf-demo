@@ -13,14 +13,15 @@ declare(strict_types=1);
 namespace App\Service\Admin\Manage;
 
 use App\Common\CacheKeys;
+use App\Model\Admin\SysAdminModel;
 use App\Model\Rbac\SysMenuModel;
-use Hyperf\DbConnection\Db;
 use Psr\SimpleCache\CacheInterface;
 
 class GetMenu
 {
     public function __construct(
         protected SysMenuModel $menuModel,
+        protected SysAdminModel $adminModel,
         protected CacheInterface $cache,
     ) {
     }
@@ -66,28 +67,6 @@ class GetMenu
 
     protected function getUserPermissionCodes(int $userId): array
     {
-        $rolePermissionArrays = Db::table('sys_admin_role as ar')
-            ->join('sys_role as r', 'ar.role_code', '=', 'r.role_code')
-            ->where('ar.admin_code', function ($q) use ($userId) {
-                $q->select('admin_code')
-                    ->from('sys_admin')
-                    ->where('id', $userId);
-            })
-            ->where('r.status', 1)
-            ->pluck('r.permission_codes')
-            ->toArray();
-
-        $allCodes = [];
-        foreach ($rolePermissionArrays as $codes) {
-            // pluck 不走模型 casts，JSON 字段返回字符串，需手动解码
-            if (is_string($codes)) {
-                $codes = json_decode($codes, true) ?: [];
-            }
-            if (is_array($codes)) {
-                $allCodes = array_merge($allCodes, $codes);
-            }
-        }
-
-        return array_unique($allCodes);
+        return $this->adminModel->find($userId)?->permissionCodes() ?? [];
     }
 }

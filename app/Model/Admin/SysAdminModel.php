@@ -91,6 +91,39 @@ class SysAdminModel extends BaseModel
     }
 
     /**
+     * 该管理员启用角色下的全部权限码（已去重）.
+     *
+     * 全项目唯一的权限码解析入口：菜单过滤与权限中间件都走这里，
+     * 避免各写一套导致「看得到菜单但接口 403」这类口径分叉。
+     * sys_role.permission_codes 已配 array cast，拿到的是数组，不需要手动 json_decode。
+     *
+     * @return array<int, string>
+     */
+    public function permissionCodes(): array
+    {
+        return $this->roles()
+            ->where('status', 1)
+            ->get()
+            ->flatMap(static fn (SysRoleModel $role) => $role->permission_codes ?? [])
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * 按 admin_code 取权限码，供拿不到模型实例的调用方（如中间件）使用.
+     *
+     * @return array<int, string>
+     */
+    public static function permissionCodesByAdminCode(string $adminCode): array
+    {
+        return static::query()
+            ->where('admin_code', $adminCode)
+            ->first()
+            ?->permissionCodes() ?? [];
+    }
+
+    /**
      * 新建时自动生成 admin_code（表字段 NOT NULL 且唯一）.
      */
     public function save(array $options = []): bool
