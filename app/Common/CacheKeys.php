@@ -103,6 +103,38 @@ final class CacheKeys
         return self::CONFIG . $groupKey;
     }
 
+    // =================== 业务变更 → 需失效的缓存 ===================
+
+    /**
+     * 权限相关变更后必须失效的缓存集合.
+     *
+     * 角色、角色-权限、管理员-角色这三类变更都会影响「谁能看到什么」，
+     * 必须同时失效：角色下拉、全量角色、用户权限码、用户菜单、超管菜单。
+     * 这几个 key 之前散落在十几个 Action 里各写各的组合——有的只清 2 个、
+     * 有的清 5 个，改完角色权限后部分用户仍会看到旧菜单。收敛到这里，
+     * 新增调用方不需要再自己判断该清哪些。
+     *
+     * @return array<int, string>
+     */
+    public static function permissionRelatedKeys(): array
+    {
+        return [
+            self::ROLE_OPTIONS,
+            self::ROLE_ALL,
+            self::PERM_CODES,
+            self::MENU_USER,
+            self::MENU_SUPER,
+        ];
+    }
+
+    /**
+     * 清除权限相关变更影响的全部缓存.
+     */
+    public static function flushPermissionRelated(): int
+    {
+        return self::flush(...self::permissionRelatedKeys());
+    }
+
     // =================== 通用清除（核心方法，只需这一个） ===================
 
     /**

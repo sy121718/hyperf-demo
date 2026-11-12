@@ -63,7 +63,7 @@ class AssignRoles
             $this->adminRoleModel->insert($rows);
         });
 
-        CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
+        CacheKeys::flushPermissionRelated();
 
         return ['admin_code' => $adminCode, 'role_codes' => $roleCodes];
     }

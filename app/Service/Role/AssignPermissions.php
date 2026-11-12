@@ -40,13 +40,7 @@ class AssignPermissions
         // 模型已配 'array' cast，无需手动 json_encode
         $role->update(['permission_codes' => $permissionCodes ?: []]);
 
-        CacheKeys::flush(
-            CacheKeys::ROLE_OPTIONS,
-            CacheKeys::ROLE_ALL,
-            CacheKeys::PERM_CODES,
-            CacheKeys::MENU_USER,
-            CacheKeys::MENU_SUPER
-        );
+        CacheKeys::flushPermissionRelated();
 
         return ['role_code' => $roleCode, 'permission_codes' => $permissionCodes];
     }

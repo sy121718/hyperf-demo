@@ -39,7 +39,7 @@ class RemoveRoleFromAdmin
         // 匹配。传 id 会 detach 不掉任何记录，接口却返回成功，角色实际还在。
         $admin->roles()->detach($role->role_code);
 
-        CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
+        CacheKeys::flushPermissionRelated();
 
         return ['admin_id' => $adminId, 'role_id' => $roleId];
     }
