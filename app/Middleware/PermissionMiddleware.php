@@ -17,6 +17,7 @@ use App\Model\Admin\SysAdminModel;
 use App\Model\Rbac\SysPermissionDictModel;
 use Hyperf\Context\Context;
 use Hyperf\HttpServer\Contract\ResponseInterface as HttpResponse;
+use Hyperf\HttpServer\Router\Dispatched;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -47,7 +48,7 @@ class PermissionMiddleware implements MiddlewareInterface
             return $handler->handle($request);
         }
 
-        $apiPath = '/' . ltrim($request->getUri()->getPath(), '/');
+        $apiPath = $this->resolveApiPath($request);
         $httpMethod = $request->getMethod();
 
         // 获取接口所需的权限码
@@ -67,6 +68,31 @@ class PermissionMiddleware implements MiddlewareInterface
         }
 
         return $handler->handle($request);
+    }
+
+    /**
+     * 取用于权限匹配的接口路径.
+     *
+     * 必须用路由 pattern 而不是原始 URI：带参路由（如 /api/admin/info/1）的真实路径
+     * 与 sys_permission_dict.api_path 里存的 /api/admin/info/{id} 永远不相等，
+     * 等值匹配落空后 getPermCode() 返回 null，调用方会当成「无需鉴权」直接放行，
+     * 导致全部带参接口对普通管理员敞开。
+     *
+     * 路由 pattern 带正则约束（/api/admin/info/{id:\d+}），字典里不带，
+     * 所以还要剥掉约束部分。
+     */
+    private function resolveApiPath(ServerRequestInterface $request): string
+    {
+        $dispatched = $request->getAttribute(Dispatched::class);
+
+        if ($dispatched instanceof Dispatched && $dispatched->handler !== null) {
+            $pattern = $dispatched->handler->route;
+            if ($pattern !== '') {
+                return (string) preg_replace('/\{(\w+)(?::[^}]+)?\}/', '{$1}', $pattern);
+            }
+        }
+
+        return '/' . ltrim($request->getUri()->getPath(), '/');
     }
 
     private function getPermCode(string $httpMethod, string $apiPath): ?string
