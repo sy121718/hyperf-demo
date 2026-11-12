@@ -29,11 +29,20 @@ export function PageLoading({ rows = 5 }: { rows?: number }) {
   );
 }
 
-/** 路由切换时盖在内容区的过渡层，避免旧页面停留造成「点了没反应」的错觉 */
+/**
+ * 懒加载路由的挂起占位。
+ *
+ * 之前这里渲染整页骨架，切标签时旧页面瞬间被骨架替换、加载完再换回内容，
+ * 观感上是「闪一下白」。改成一条不占位的进度条：内容区域保持当前高度，
+ * 用户的注意力只被顶部那条线吸引，不再整块抖动。
+ *
+ * 需要骨架屏的场景（首次进入、数据未返回）由页面自己控制，
+ * 不要用路由级 fallback 代替。
+ */
 export function RouteFallback() {
   return (
-    <div className="animate-in fade-in-0 duration-150">
-      <PageLoading />
+    <div className="pointer-events-none fixed inset-x-0 top-14 z-50 h-0.5 overflow-hidden bg-transparent">
+      <div className="progress-indeterminate h-full w-1/3 bg-primary" />
     </div>
   );
 }

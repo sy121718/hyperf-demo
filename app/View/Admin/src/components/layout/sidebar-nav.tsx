@@ -131,15 +131,27 @@ export function SidebarNav({ menus }: SidebarNavProps) {
     setActiveId(id);
   };
 
-  /** 点二级链接后收起面板（固定时保留） */
+  /**
+   * 点二级链接后收起面板（固定时保留）.
+   *
+   * 稍作延迟再收：点击瞬间面板就开始收缩、主内容区同时变宽，
+   * 两件事叠在一起会让人觉得「页面在抖」。等路由切换先落地，
+   * 再收起侧栏，视觉上就是两次独立的、各自平滑的变化。
+   *
+   * 用 setTimeout 而不是 requestAnimationFrame：rAF 的时机受渲染帧影响，
+   * 在路由切换引起的大量更新之间不一定能排到，实测偶尔不生效。
+   */
   const closeIfNotPinned = () => {
-    if (!pinned) {
-      setActiveId(null);
+    if (pinned) {
+      return;
     }
+    window.setTimeout(() => setActiveId(null), 180);
   };
 
+  // shrink-0 不能省：父级是 flex 行、主内容用 flex-1，
+  // 不写的话侧栏会被压到图标栏的宽度，二级面板展开后只有 1px 可见
   return (
-    <div className="hidden h-svh md:flex" data-sidebar-root>
+    <div className="hidden h-svh shrink-0 md:flex" data-sidebar-root>
       <nav className="flex w-[76px] shrink-0 flex-col items-center gap-1 border-r border-sidebar-border bg-sidebar py-3">
         <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold tracking-tight text-primary-foreground shadow-sm">
           RB
@@ -225,49 +237,68 @@ export function SidebarNav({ menus }: SidebarNavProps) {
         })}
       </nav>
 
-      {activeGroup ? (
-        <aside className="flex w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
-          <div className="flex h-14 items-center justify-between gap-2 border-b border-sidebar-border px-4">
-            <span className="truncate text-sm font-semibold tracking-tight">
-              {groupLabel(activeGroup)}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              title={pinned ? "取消固定" : "固定展开"}
-              className={cn(pinned && "text-primary")}
-              onClick={() => setPinned((prev) => !prev)}
+      {/*
+        二级面板收起时宽度归零、展开时恢复，用 grid-template-columns 过渡。
+        不走 {activeGroup ? <aside/> : null}：那样面板瞬间从 DOM 消失，
+        主内容区同时变宽，一进一出叠成一次布局跳动。
+
+        列宽用内联 style 而不是 Tailwind 的 grid-cols-[14rem]：
+        后者在 Tailwind 4 下生成的是固定值类名，两条类名同时存在时
+        后定义的 0 会胜出，面板永远展不开。
+      */}
+      <div
+        className="shrink-0 overflow-hidden"
+        style={{ width: activeGroup ? "14rem" : "0rem" }}
+        aria-hidden={activeGroup === null}
+      >
+      <aside
+        className={cn(
+          "flex w-56 min-w-0 flex-col overflow-hidden border-r bg-sidebar",
+          activeGroup ? "border-sidebar-border" : "pointer-events-none border-transparent",
+        )}
+      >
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border px-4">
+          <span className="truncate text-sm font-semibold tracking-tight">
+            {activeGroup ? groupLabel(activeGroup) : ""}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            title={pinned ? "取消固定" : "固定展开"}
+            className={cn(pinned && "text-primary")}
+            onClick={() => setPinned((prev) => !prev)}
+            tabIndex={activeGroup ? 0 : -1}
+          >
+            {pinned ? <Pin /> : <PinOff />}
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-2 py-3">
+          {activeGroup?.type === MENU_TYPE.MENU && activeGroup.path ? (
+            <NavLink
+              to={activeGroup.path}
+              onClick={closeIfNotPinned}
+              className={({ isActive }) =>
+                cn(
+                  "mb-1 block truncate rounded-md px-2.5 py-2 text-sm transition-colors",
+                  isActive
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
+                )
+              }
             >
-              {pinned ? <Pin /> : <PinOff />}
-            </Button>
-          </div>
+              {groupLabel(activeGroup)}
+            </NavLink>
+          ) : null}
 
-          <div className="flex-1 overflow-y-auto px-2 py-3">
-            {activeGroup.type === MENU_TYPE.MENU && activeGroup.path ? (
-              <NavLink
-                to={activeGroup.path}
-                onClick={closeIfNotPinned}
-                className={({ isActive }) =>
-                  cn(
-                    "mb-1 block truncate rounded-md px-2.5 py-2 text-sm transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60",
-                  )
-                }
-              >
-                {groupLabel(activeGroup)}
-              </NavLink>
-            ) : null}
+          <SubMenu nodes={activeGroup?.children ?? []} onNavigate={closeIfNotPinned} />
+        </div>
 
-            <SubMenu nodes={activeGroup.children ?? []} onNavigate={closeIfNotPinned} />
-          </div>
-
-          <div className="border-t border-sidebar-border px-4 py-3 text-[11px] text-muted-foreground">
-            {pinned ? "面板已固定" : "点击空白处收起"}
-          </div>
-        </aside>
-      ) : null}
+        <div className="shrink-0 border-t border-sidebar-border px-4 py-3 text-[11px] text-muted-foreground">
+          {pinned ? "面板已固定" : "点击空白处收起"}
+        </div>
+      </aside>
+      </div>
     </div>
   );
 }
