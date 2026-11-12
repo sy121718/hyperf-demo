@@ -110,7 +110,7 @@ class AdminController extends AbstractController
     public function fullInfo(): array
     {
         $id = (int) $this->request->route('id', 0);
-        $result = container()->get(ManageAction\GetAdminFullInfo::class)->handle($id);
+        $result = container()->get(ManageAction\GetInfo::class)->handle($id);
         return $this->success($result, '获取成功');
     }
 
