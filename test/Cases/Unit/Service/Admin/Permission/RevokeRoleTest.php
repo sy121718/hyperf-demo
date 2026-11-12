@@ -27,6 +27,10 @@ use Hyperf\Testing\TestCase;
  * 背景：roles() 的 belongsToMany 以 sys_admin_role.role_code ↔ sys_role.role_code
  * 连接，sync() 传入的值会被直接写进 role_code 列。曾用 pluck('id')，
  * 结果原有角色全被删掉、换成一条 role_code='2' 的无效记录，管理员权限被清空。
+ *
+ * 注意：这里的种子数据是真实提交的，不能包在事务里回滚。
+ * RevokeRole 内部用 parallel() 并发查库，协程会被分配到另外的连接，
+ * 看不到未提交的事务数据，测试会误报「管理员不存在」。
  * @internal
  * @coversNothing
  */
@@ -34,13 +38,16 @@ class RevokeRoleTest extends TestCase
 {
     private const ADMIN_CODE = 'revoke_probe';
 
+    private int $adminId = 0;
+
     protected function setUp(): void
     {
         parent::setUp();
-        Db::beginTransaction();
         Context::set('auth_user', ['id' => 1, 'username' => 'tester', 'is_admin' => 1]);
 
-        Db::table('sys_admin')->insert([
+        $this->cleanUp();
+
+        $this->adminId = (int) Db::table('sys_admin')->insertGetId([
             'username' => self::ADMIN_CODE,
             'admin_code' => self::ADMIN_CODE,
             'password' => 'x',
@@ -54,7 +61,7 @@ class RevokeRoleTest extends TestCase
 
     protected function tearDown(): void
     {
-        Db::rollBack();
+        $this->cleanUp();
         Context::destroy('auth_user');
         parent::tearDown();
     }
@@ -74,15 +81,19 @@ class RevokeRoleTest extends TestCase
         );
     }
 
+    /**
+     * 这条锁定 bug 本身：pivot 里的 role_code 必须是真实角色标识，不能是 "1" / "2".
+     */
     public function testPivotNeverContainsNumericId(): void
     {
         $this->bindRoles(['super_admin', 'normal_user']);
 
         $this->revoke([$this->roleIdOf('super_admin')]);
 
-        // pivot 里的 role_code 必须都是真实角色标识，不能是 "1" / "2" 这类 id
-        foreach ($this->currentRoleCodes() as $code) {
-            $this->assertNotSame('', trim($code));
+        $codes = $this->currentRoleCodes();
+        $this->assertNotEmpty($codes, '回收一个角色后不应把角色全部清空');
+
+        foreach ($codes as $code) {
             $this->assertTrue(
                 SysRoleModel::query()->where('role_code', $code)->exists(),
                 "pivot 里出现了不存在的 role_code: {$code}"
@@ -149,13 +160,17 @@ class RevokeRoleTest extends TestCase
      */
     private function revoke(array $roleIds): array
     {
-        $adminId = (int) Db::table('sys_admin')->where('admin_code', self::ADMIN_CODE)->value('id');
-
         $request = AdminRequest::fromArray([
-            'admin_id' => $adminId,
+            'admin_id' => $this->adminId,
             'role_ids' => $roleIds,
         ]);
 
         return (new RevokeRole(new SysAdminModel(), new SysRoleModel()))->handle($request);
+    }
+
+    private function cleanUp(): void
+    {
+        Db::table('sys_admin_role')->where('admin_code', self::ADMIN_CODE)->delete();
+        Db::table('sys_admin')->where('admin_code', self::ADMIN_CODE)->delete();
     }
 }

@@ -22,6 +22,7 @@ use App\Service\Notice\GetUnreadCount;
 use App\Service\Notice\MarkRead;
 use App\Service\Notice\SetTargets;
 use App\Service\Notice\Update;
+use App\Service\Notice\Withdraw;
 use Hyperf\Context\Context;
 use Mockery;
 use PHPUnit\Framework\TestCase;
@@ -311,5 +312,54 @@ class NoticeTest extends TestCase
         $result = $action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'target_users' => [1, 2, 3]]));
 
         $this->assertEquals(3, $result);
+    }
+
+    // ==================== Withdraw ====================
+
+    /**
+     * 已发布（status=1）的通知可以撤回，撤回后状态变为 2.
+     *
+     * findOrNotFound 的返回类型是 static，返回值必须是 NoticeModel 的 mock 实例，
+     * 用真实模型或 stdClass 都会触发 TypeError。
+     */
+    public function testWithdrawPublishedNotice(): void
+    {
+        $notice = Mockery::mock(NoticeModel::class);
+        $notice->shouldReceive('getAttribute')->with('status')->andReturn(1);
+        $notice->shouldReceive('update')->once()->with(['status' => 2])->andReturn(true);
+
+        $noticeModel = Mockery::mock(NoticeModel::class);
+        $noticeModel->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
+
+        $this->assertTrue((new Withdraw($noticeModel))->handle(1));
+    }
+
+    /**
+     * 未发布/已撤回的通知不能再撤回，避免状态被反复改写.
+     */
+    public function testWithdrawRejectsUnpublishedNotice(): void
+    {
+        $notice = Mockery::mock(NoticeModel::class);
+        $notice->shouldReceive('getAttribute')->with('status')->andReturn(0);
+        $notice->shouldReceive('update')->never();
+
+        $noticeModel = Mockery::mock(NoticeModel::class);
+        $noticeModel->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
+
+        $this->expectException(BusinessException::class);
+        (new Withdraw($noticeModel))->handle(1);
+    }
+
+    public function testWithdrawRejectsAlreadyWithdrawnNotice(): void
+    {
+        $notice = Mockery::mock(NoticeModel::class);
+        $notice->shouldReceive('getAttribute')->with('status')->andReturn(2);
+        $notice->shouldReceive('update')->never();
+
+        $noticeModel = Mockery::mock(NoticeModel::class);
+        $noticeModel->shouldReceive('findOrNotFound')->with(1, '通知')->andReturn($notice);
+
+        $this->expectException(BusinessException::class);
+        (new Withdraw($noticeModel))->handle(1);
     }
 }

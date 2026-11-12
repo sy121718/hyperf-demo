@@ -12,15 +12,20 @@ declare(strict_types=1);
 
 namespace HyperfTest\Cases\Unit\Service\Ops\Session;
 
+use App\Common\CacheKeys;
+use App\Dto\Session\SessionRequest;
 use App\Exception\BusinessException;
 use App\Model\Admin\SysAdminSessionsModel;
+use App\Service\Ops\Session\BatchKickout;
 use App\Service\Ops\Session\CleanExpired;
 use App\Service\Ops\Session\GetInfo;
 use App\Service\Ops\Session\Kickout;
 use Hyperf\Context\Context;
 use Hyperf\Database\Model\Builder;
+use Hyperf\Database\Model\Collection as BaseCollection;
 use Hyperf\Testing\TestCase;
 use Mockery;
+use Mockery\MockInterface;
 use Psr\SimpleCache\CacheInterface;
 
 /**
@@ -150,5 +155,83 @@ class SessionExtraTest extends TestCase
         $count = (new CleanExpired($model))->handle();
 
         $this->assertSame(5, $count);
+    }
+
+    // ==================== BatchKickout ====================
+
+    /**
+     * 只处理启用中的会话；已是下线状态的跳过，不重复写库、不重复删缓存.
+     */
+    public function testBatchKickoutOnlyTouchesActiveSessions(): void
+    {
+        $active = $this->makeSession(status: 1, token: 'tok-a', expectSave: true);
+        $inactive = $this->makeSession(status: 0, token: 'tok-b', expectSave: false);
+
+        $builder = Mockery::mock(Builder::class);
+        $builder->shouldReceive('get')->andReturn(new BaseCollection([$active, $inactive]));
+
+        $model = Mockery::mock(SysAdminSessionsModel::class);
+        $model->shouldReceive('whereIn')->with('id', [1, 2])->andReturn($builder);
+
+        $cache = Mockery::mock(CacheInterface::class);
+        // 只有启用中的那条会话需要清缓存
+        $cache->shouldReceive('delete')->once()->with(CacheKeys::authSession('tok-a'));
+
+        $count = (new BatchKickout($model, $cache))->handle(
+            SessionRequest::fromArray(['ids' => [1, 2]])
+        );
+
+        $this->assertSame(1, $count, '只应统计真正被踢下线的会话');
+    }
+
+    public function testBatchKickoutWithoutTokenStillCounts(): void
+    {
+        $session = $this->makeSession(status: 1, token: null, expectSave: true);
+
+        $builder = Mockery::mock(Builder::class);
+        $builder->shouldReceive('get')->andReturn(new BaseCollection([$session]));
+
+        $model = Mockery::mock(SysAdminSessionsModel::class);
+        $model->shouldReceive('whereIn')->andReturn($builder);
+
+        $cache = Mockery::mock(CacheInterface::class);
+        $cache->shouldNotReceive('delete');
+
+        $count = (new BatchKickout($model, $cache))->handle(
+            SessionRequest::fromArray(['ids' => [3]])
+        );
+
+        $this->assertSame(1, $count);
+    }
+
+    public function testBatchKickoutWithEmptyIds(): void
+    {
+        $builder = Mockery::mock(Builder::class);
+        $builder->shouldReceive('get')->andReturn(new BaseCollection([]));
+
+        $model = Mockery::mock(SysAdminSessionsModel::class);
+        $model->shouldReceive('whereIn')->with('id', [])->andReturn($builder);
+
+        $cache = Mockery::mock(CacheInterface::class);
+
+        $this->assertSame(
+            0,
+            (new BatchKickout($model, $cache))->handle(SessionRequest::fromArray([]))
+        );
+    }
+
+    private function makeSession(int $status, ?string $token, bool $expectSave): MockInterface&SysAdminSessionsModel
+    {
+        /** @var MockInterface|SysAdminSessionsModel $session */
+        $session = Mockery::mock(SysAdminSessionsModel::class);
+        $session->shouldReceive('getAttribute')->with('status')->andReturn($status);
+        // empty($session->jwt_token) 先走 __isset → offsetExists，命中后才读 getAttribute
+        $session->shouldReceive('offsetExists')->with('jwt_token')->andReturn($token !== null);
+        $session->shouldReceive('getAttribute')->with('jwt_token')->andReturn($token);
+        $session->shouldReceive('offsetGet')->with('jwt_token')->andReturn($token);
+        $session->shouldReceive('setAttribute')->with('status', 0)->andReturnNull();
+        $session->shouldReceive('save')->times($expectSave ? 1 : 0)->andReturn(true);
+
+        return $session;
     }
 }
