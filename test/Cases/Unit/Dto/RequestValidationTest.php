@@ -78,13 +78,14 @@ class RequestValidationTest extends TestCase
         $this->assertSame('运维', $dto->role_name);
     }
 
-    public function testRequestParamOverridesRouteParam(): void
+    public function testRouteParamOverridesRequestParam(): void
     {
+        // 主键由 URL 决定：请求体里伪造的 id 不能改变实际更新的目标行
         $dto = $this->makeRequest('update', ['id' => '7'], ['id' => '9']);
 
         $dto->validateResolved();
 
-        $this->assertSame(7, $dto->id);
+        $this->assertSame(9, $dto->id);
     }
 
     public function testValidationHydratesNestedArrayField(): void

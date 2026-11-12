@@ -70,6 +70,7 @@ class NoticeRequest extends BaseRequestDto
                 'status' => 'nullable|in:0,1,2',
             ],
             'update' => [
+                'id' => 'required|integer|min:1',
                 'title' => 'nullable|string|max:200',
                 'content' => 'nullable|string',
                 'notice_type' => 'nullable|integer|min:0',

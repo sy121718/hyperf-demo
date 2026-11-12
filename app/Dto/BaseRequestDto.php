@@ -255,9 +255,11 @@ abstract class BaseRequestDto extends FormRequest
     }
 
     /**
-     * 校验数据 = 路由参数 + 请求参数（请求参数优先）.
+     * 校验数据 = 路由参数 + 请求参数（路由参数优先）.
      *
      * update/delete 这类场景的主键在路由里，不并进来 required 规则永远无法通过。
+     * 路由参数放最后合并是为了让它覆盖请求体：主键由 URL 决定，
+     * 请求体里伪造的同名字段不能改变实际更新的目标行。
      * @return array<string, mixed>
      */
     protected function validationData(): array
@@ -268,7 +270,7 @@ abstract class BaseRequestDto extends FormRequest
             $params = $dispatched->params;
         }
 
-        return array_merge($params, parent::validationData());
+        return array_merge(parent::validationData(), $params);
     }
 
     /**

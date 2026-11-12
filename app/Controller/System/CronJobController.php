@@ -40,8 +40,6 @@ class CronJobController extends AbstractController
 
     public function update(CronJobRequest $request): array
     {
-        // 路由参数优先，覆盖请求体里的 id
-        $request->id = (int) $this->request->route('id', $request->id ?? 0);
         $result = container()->get(CronJobAction\Update::class)->handle($request);
         return $this->success(CronJobResponse::saved($result), '更新成功');
     }

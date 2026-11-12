@@ -47,8 +47,6 @@ class DictController extends AbstractController
 
     public function update(DictRequest $request): array
     {
-        // 路由参数优先，覆盖请求体里的 id
-        $request->id = (int) $this->request->route('id', $request->id ?? 0);
         $result = container()->get(DictAction\Update::class)->handle($request);
         return $this->success(DictResponse::saved($result), '更新成功');
     }

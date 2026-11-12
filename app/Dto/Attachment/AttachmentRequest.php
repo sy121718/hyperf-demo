@@ -68,6 +68,7 @@ class AttachmentRequest extends BaseRequestDto
                 'extra_info' => 'nullable|array',
             ],
             'update' => [
+                'id' => 'required|integer|min:1',
                 'file_name' => 'nullable|string|max:255',
                 'file_type' => 'nullable|string|max:50',
                 'storage_type' => 'nullable|string|max:50',

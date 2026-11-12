@@ -33,8 +33,6 @@ class PermissionController extends AbstractController
 
     public function update(PermissionRequest $request): array
     {
-        // 路由参数优先，覆盖请求体里的 id
-        $request->id = (int) $this->request->route('id', $request->id ?? 0);
         $result = container()->get(PermissionAction\Update::class)->handle($request);
         return $this->success(PermissionResponse::saved($result), '更新成功');
     }

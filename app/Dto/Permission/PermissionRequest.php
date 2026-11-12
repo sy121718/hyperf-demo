@@ -53,7 +53,7 @@ class PermissionRequest extends BaseRequestDto
     {
         return match ($this->getRouteAction()) {
             'create' => $this->itemRules(required: true),
-            'update' => $this->itemRules(required: false),
+            'update' => ['id' => 'required|integer|min:1', ...$this->itemRules(required: false)],
             'tree' => [
                 ...$this->paginationRules(),
                 'parent_id' => 'nullable|integer|min:0',

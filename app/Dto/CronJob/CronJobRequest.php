@@ -53,6 +53,7 @@ class CronJobRequest extends BaseRequestDto
                 'sort_order' => 'nullable|integer|min:0',
             ],
             'update' => [
+                'id' => 'required|integer|min:1',
                 'job_name' => 'nullable|string|max:100',
                 'cron_expression' => 'nullable|string|max:100',
                 'command' => 'nullable|string|max:500',

@@ -77,6 +77,7 @@ class MenuRequest extends BaseRequestDto
                 'permission_codes.*' => 'string|max:100',
             ],
             'update' => [
+                'id' => 'required|integer|min:1',
                 'menu_code' => 'nullable|string|max:50',
                 'menu_name' => 'nullable|string|max:50',
                 'parent_id' => 'nullable|integer|min:0',

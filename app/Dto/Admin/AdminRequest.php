@@ -70,6 +70,7 @@ class AdminRequest extends BaseRequestDto
                 'role_ids.*' => 'integer|min:1',
             ],
             'update' => [
+                'id' => 'required|integer|min:1',
                 'username' => 'nullable|string|min:3|max:50',
                 'password' => 'nullable|string|min:6|max:100',
                 'name' => 'nullable|string|max:50',

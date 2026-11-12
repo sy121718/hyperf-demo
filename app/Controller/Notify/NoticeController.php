@@ -27,8 +27,6 @@ class NoticeController extends AbstractController
 
     public function update(NoticeRequest $request): array
     {
-        // 路由参数优先，覆盖请求体里的 id
-        $request->id = (int) $this->request->route('id', $request->id ?? 0);
         container()->get(NoticeAction\Update::class)->handle($request);
         return $this->success(null, '更新成功');
     }
