@@ -135,6 +135,42 @@ final class CacheKeys
         return self::flush(...self::permissionRelatedKeys());
     }
 
+    /**
+     * 菜单增删改后必须失效的缓存集合.
+     *
+     * 只有菜单自身的三份缓存：菜单树、超管菜单、按用户过滤的菜单。
+     *
+     * 不包含 PERM_CODES：它缓存的是 SysAdminModel::permissionCodes() 的结果，
+     * 数据源是 sys_admin_role + sys_role.permission_codes，与 sys_menus 无关。
+     * 菜单过滤是拿「用户的权限码集合」去匹配菜单的 permission_code，
+     * 改菜单不会改变任何人的权限码集合。
+     *
+     * 之前 Update / Delete 会多清一次 PERM_CODES，是无效操作：该 key 是前缀，
+     * 每次都会 SCAN 全量 perm:codes:*，代价不小却什么也没修正。
+     *
+     * 前提：菜单 CRUD 只写 sys_menus，不写角色权限。若将来加了
+     * 「新建菜单时自动给某角色授权」这类联动，必须把它移到
+     * flushPermissionRelated() 或两者都调。
+     *
+     * @return array<int, string>
+     */
+    public static function menuRelatedKeys(): array
+    {
+        return [
+            self::MENU_TREE,
+            self::MENU_SUPER,
+            self::MENU_USER,
+        ];
+    }
+
+    /**
+     * 清除菜单变更影响的缓存.
+     */
+    public static function flushMenuRelated(): int
+    {
+        return self::flush(...self::menuRelatedKeys());
+    }
+
     // =================== 通用清除（核心方法，只需这一个） ===================
 
     /**

@@ -63,12 +63,8 @@ class Update
             $menu->update($updateData);
 
             Db::commit();
-            CacheKeys::flush(
-                CacheKeys::MENU_TREE,
-                CacheKeys::MENU_SUPER,
-                CacheKeys::MENU_USER,
-                CacheKeys::PERM_CODES
-            );
+            // 菜单变更不影响任何人的权限码集合，无需清 PERM_CODES
+            CacheKeys::flushMenuRelated();
 
             return $menu->fresh()->toArray();
         } catch (Throwable $e) {

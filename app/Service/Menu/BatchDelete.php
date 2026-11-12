@@ -50,7 +50,8 @@ class BatchDelete
             }
 
             Db::commit();
-            CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER, CacheKeys::PERM_CODES);
+            // 菜单变更不影响任何人的权限码集合，无需清 PERM_CODES
+            CacheKeys::flushMenuRelated();
             return $deletedCount;
         } catch (Throwable $e) {
             Db::rollBack();

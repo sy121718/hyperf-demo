@@ -68,4 +68,39 @@ class CacheKeysPermissionTest extends TestCase
 
         $this->assertSame($keys, array_values(array_unique($keys)));
     }
+
+    // ==================== 菜单变更 ====================
+
+    public function testMenuChangesFlushOnlyMenuCaches(): void
+    {
+        $this->assertSame([
+            CacheKeys::MENU_TREE,
+            CacheKeys::MENU_SUPER,
+            CacheKeys::MENU_USER,
+        ], CacheKeys::menuRelatedKeys());
+    }
+
+    /**
+     * 菜单增删改只动 sys_menus，不改变任何人的权限码集合，
+     * 因此不该清 PERM_CODES（前缀 SCAN，代价不小且无收益）。
+     */
+    public function testMenuChangesDoNotFlushPermissionCodes(): void
+    {
+        $this->assertNotContains(CacheKeys::PERM_CODES, CacheKeys::menuRelatedKeys());
+    }
+
+    /**
+     * 反之，权限变更必须清掉按用户维度过滤的菜单缓存，否则用户仍看到旧菜单.
+     *
+     * MENU_TREE 是全量菜单树（管理端菜单管理页用），不带用户维度，
+     * 权限变化不影响它，所以不在这里——两边的差异是刻意的。
+     */
+    public function testPermissionChangesFlushPerUserMenuCaches(): void
+    {
+        $keys = CacheKeys::permissionRelatedKeys();
+
+        $this->assertContains(CacheKeys::MENU_SUPER, $keys);
+        $this->assertContains(CacheKeys::MENU_USER, $keys);
+        $this->assertNotContains(CacheKeys::MENU_TREE, $keys);
+    }
 }

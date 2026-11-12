@@ -51,7 +51,7 @@ class Create
             $menu = $this->menuModel->create($dbData);
 
             Db::commit();
-            CacheKeys::flush(CacheKeys::MENU_TREE, CacheKeys::MENU_SUPER, CacheKeys::MENU_USER);
+            CacheKeys::flushMenuRelated();
 
             return $menu->toArray();
         } catch (Throwable $e) {
