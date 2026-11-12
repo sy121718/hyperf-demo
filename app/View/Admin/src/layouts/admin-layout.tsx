@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@rbac/ui/components/ui/dropdown-menu";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { TopProgress } from "@/components/shared/top-progress";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { logout } from "@/api/auth";
 import { getProfile } from "@/api/profile";
@@ -67,6 +68,7 @@ export default function AdminLayout({ menus }: { menus: MenuNode[] }) {
     // 固定视口高度，让 main 成为唯一滚动容器；
     // 这样列表页的 sticky 工具栏才有可吸附的滚动上下文
     <div className="flex h-svh overflow-hidden">
+      <TopProgress />
       <SidebarNav menus={menus} />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">

@@ -38,7 +38,7 @@ export default function SessionPage() {
   const effectiveScope: ListScope = canViewAll ? scope : "mine";
 
   // scope 决定接口，拼进 key 让「全部/我的」分开缓存
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<SessionRow>({
       queryKey: [...queryKeys.session.all, effectiveScope],
       fetcher: (params) => getSessionList(effectiveScope, params),
@@ -87,6 +87,16 @@ export default function SessionPage() {
   );
 
   const columns: DataTableColumn<SessionRow>[] = [
+    {
+      key: "admin_name",
+      header: "账号",
+      cell: (row) => (
+        <div className="space-y-0.5">
+          <div>{row.admin_name || `#${row.admin_id}`}</div>
+          <div className="text-xs text-muted-foreground">{row.admin_username || "-"}</div>
+        </div>
+      ),
+    },
     {
       key: "login_ip",
       header: "登录 IP",
@@ -178,6 +188,7 @@ export default function SessionPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

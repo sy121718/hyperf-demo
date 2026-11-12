@@ -240,7 +240,7 @@ export function NoticeFormDialog({ open, onOpenChange, noticeId }: NoticeFormDia
               取消
             </Button>
             <Button type="submit" disabled={mutation.isPending || detailLoading}>
-              {mutation.isPending ? "保存中…" : "保存"}
+              {"保存"}
             </Button>
           </DialogFooter>
         </form>

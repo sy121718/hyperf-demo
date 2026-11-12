@@ -43,7 +43,7 @@ export default function AdminPage() {
   const canBan = usePermission("admin:ban");
 
   // 桌面端服务端分页、手机端无限滚动，同一份筛选参数
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<AdminRow>({
       queryKey: queryKeys.admin.all,
       fetcher: getAdminList,
@@ -220,6 +220,7 @@ export default function AdminPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

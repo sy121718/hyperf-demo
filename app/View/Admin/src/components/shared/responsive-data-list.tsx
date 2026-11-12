@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { DataTable, type DataTableColumn } from "@/components/shared/data-table";
 import { DataTablePagination } from "@/components/shared/data-table-pagination";
 import { MobileCardList } from "@/components/shared/mobile-card-list";
+import { cn } from "@rbac/ui/lib/utils";
 
 /**
  * 一份 columns，两种呈现。
@@ -22,6 +23,8 @@ export interface ResponsiveDataListProps<T> {
   items: T[];
   total: number;
   loading: boolean;
+  /** 已有数据、正在刷新时给一点视觉提示，但不把列表替换成骨架 */
+  refreshing?: boolean;
   /** 手机端无限滚动的状态，桌面端忽略 */
   loadingMore: boolean;
   hasNextPage: boolean;
@@ -65,6 +68,7 @@ export function ResponsiveDataList<T>({
   items,
   total,
   loading,
+  refreshing = false,
   loadingMore,
   hasNextPage,
   sentinelRef,
@@ -83,13 +87,22 @@ export function ResponsiveDataList<T>({
   if (!isMobile) {
     return (
       <>
-        <DataTable
-          columns={columns}
-          rows={items}
-          rowKey={rowKey}
-          loading={loading}
-          emptyText={emptyText}
-        />
+        {/* 刷新态用透明度轻提示，保留下层数据，避免换页时表格整体闪成骨架 */}
+        <div
+          className={cn(
+            "transition-opacity duration-200",
+            refreshing && !loading && "pointer-events-none opacity-60",
+          )}
+          aria-busy={refreshing}
+        >
+          <DataTable
+            columns={columns}
+            rows={items}
+            rowKey={rowKey}
+            loading={loading}
+            emptyText={emptyText}
+          />
+        </div>
         <DataTablePagination
           total={total}
           page={page}

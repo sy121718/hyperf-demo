@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@rbac/ui/components/ui/dialog";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { FormField } from "@/components/shared/form-field";
 import { SearchableMultiSelect } from "@/components/shared/searchable-multi-select";
 import { Input } from "@rbac/ui/components/ui/input";
@@ -189,9 +190,9 @@ export function RoleFormDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "保存中…" : "保存"}
-            </Button>
+            <SubmitButton type="submit" pending={mutation.isPending}>
+              {"保存"}
+            </SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

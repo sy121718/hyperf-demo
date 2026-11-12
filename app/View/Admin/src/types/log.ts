@@ -17,6 +17,8 @@ export interface LoginLogRow {
 export interface OperationLogRow {
   id: number;
   admin_id: number;
+  /** 由后端预加载 admin 关联得出，管理员已删除时可能缺失 */
+  admin_name?: string | null;
   menu_id: number | null;
   operation: string | null;
   service_method: string | null;

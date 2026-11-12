@@ -38,7 +38,7 @@ export default function EmailTemplatePage() {
   const canUpdate = usePermission("email:template-update");
   const canDelete = usePermission("email:template-delete");
 
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<EmailTemplateRow>({
       queryKey: [...queryKeys.email.all, "templates"],
       fetcher: getEmailTemplates,
@@ -207,6 +207,7 @@ export default function EmailTemplatePage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@rbac/ui/components/ui/dialog";
 import { Input } from "@rbac/ui/components/ui/input";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { FormField } from "@/components/shared/form-field";
 import { resetAdminPassword } from "@/api/admin";
 
@@ -89,9 +90,9 @@ export function ResetPasswordDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "提交中…" : "确认重置"}
-            </Button>
+            <SubmitButton type="submit" pending={mutation.isPending}>
+              {"确认重置"}
+            </SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

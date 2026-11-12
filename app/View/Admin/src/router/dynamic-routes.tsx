@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ComponentType, type LazyExoticComponent, type ReactElement } from "react";
 
 import NotFoundPage from "@/pages/not-found";
+import { RouteFallback } from "@/components/shared/page-loading";
 import { isRoutableMenu, type MenuNode } from "@/types/menu";
 import { resolvePage } from "@/router/pages";
 
@@ -57,7 +58,7 @@ function LazyPage({ component }: { component: string }) {
   }
 
   return (
-    <Suspense fallback={<div className="p-6 text-muted-foreground">加载中…</div>}>
+    <Suspense fallback={<RouteFallback />}>
       <Component />
     </Suspense>
   );

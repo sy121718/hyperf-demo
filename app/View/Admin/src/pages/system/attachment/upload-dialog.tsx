@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@rbac/ui/components/ui/select";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { FormField } from "@/components/shared/form-field";
 import { uploadAttachment } from "@/api/attachment";
 import { queryKeys } from "@/lib/query-keys";
@@ -166,9 +167,9 @@ export function UploadAttachmentDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "提交中…" : "登记"}
-            </Button>
+            <SubmitButton type="submit" pending={mutation.isPending}>
+              {"登记"}
+            </SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -37,7 +37,7 @@ export default function LoginLogPage() {
   const effectiveScope: ListScope = canViewAll ? scope : "mine";
 
   // scope 决定调哪个接口，拼进 key 才能分出「全部/我的」两份缓存
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<LoginLogRow>({
       queryKey: [...queryKeys.log.all, "login", effectiveScope],
       fetcher: (params) => getLoginLogs(effectiveScope, params),
@@ -137,6 +137,7 @@ export default function LoginLogPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

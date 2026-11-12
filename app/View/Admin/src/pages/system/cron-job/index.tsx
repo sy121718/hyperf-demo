@@ -41,7 +41,7 @@ export default function CronJobPage() {
   const canDelete = usePermission("cron-job:delete");
   const canRun = usePermission("cron-job:run");
 
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<CronJobRow>({
       queryKey: queryKeys.cronJob.all,
       fetcher: getCronJobList,
@@ -201,6 +201,7 @@ export default function CronJobPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

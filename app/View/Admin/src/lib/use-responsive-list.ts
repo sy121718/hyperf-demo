@@ -25,7 +25,10 @@ export interface UseResponsiveListOptions<T> {
 export interface ResponsiveListResult<T> {
   items: T[];
   total: number;
+  /** 首屏加载：还没有任何数据可显示 */
   loading: boolean;
+  /** 正在刷新：已有数据但新请求在飞（换页、改筛选、搜索） */
+  refreshing: boolean;
   /** 手机上是否正在加载下一页 */
   loadingMore: boolean;
   hasNextPage: boolean;
@@ -91,6 +94,10 @@ export function useResponsiveList<T>({
     items,
     total,
     loading: isMobile ? infiniteQuery.isLoading : pagedQuery.isLoading,
+    // 刷新与首屏分开：刷新时保留旧数据继续显示，只做轻提示，避免表格闪成骨架
+    refreshing: isMobile
+      ? infiniteQuery.isFetching && !infiniteQuery.isFetchingNextPage
+      : pagedQuery.isFetching,
     loadingMore: infiniteQuery.isFetchingNextPage,
     hasNextPage: infiniteQuery.hasNextPage,
     sentinelRef,

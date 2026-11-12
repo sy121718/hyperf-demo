@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 
-import { Button } from "@rbac/ui/components/ui/button";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { login } from "@/api/auth";
 import { useAuthStore } from "@/stores/auth";
 
@@ -89,9 +89,14 @@ export default function LoginPage() {
           )}
         </div>
 
-        <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? "登录中…" : "登录"}
-        </Button>
+        <SubmitButton
+          type="submit"
+          className="w-full"
+          pending={submitting}
+          pendingText="登录中…"
+        >
+          登录
+        </SubmitButton>
       </form>
     </div>
   );

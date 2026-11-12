@@ -41,7 +41,7 @@ export default function IpBlacklistPage() {
   const canBan = usePermission("ip-blacklist:ban");
   const canUnban = usePermission("ip-blacklist:unban");
 
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<IpBlacklistRow>({
       queryKey: queryKeys.ipBlacklist.all,
       fetcher: getIpBlacklist,
@@ -179,6 +179,7 @@ export default function IpBlacklistPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

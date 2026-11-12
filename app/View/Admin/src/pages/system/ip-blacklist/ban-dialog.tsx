@@ -16,6 +16,7 @@ import {
 } from "@rbac/ui/components/ui/dialog";
 import { Input } from "@rbac/ui/components/ui/input";
 import { Textarea } from "@rbac/ui/components/ui/textarea";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { FormField } from "@/components/shared/form-field";
 import { banIp } from "@/api/ip-blacklist";
 import { queryKeys } from "@/lib/query-keys";
@@ -116,9 +117,9 @@ export function BanDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
-            <Button type="submit" variant="destructive" disabled={mutation.isPending}>
-              {mutation.isPending ? "提交中…" : "确认拉黑"}
-            </Button>
+            <SubmitButton type="submit" variant="destructive" pending={mutation.isPending}>
+              {"确认拉黑"}
+            </SubmitButton>
           </DialogFooter>
         </form>
       </DialogContent>

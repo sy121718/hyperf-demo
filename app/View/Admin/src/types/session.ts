@@ -2,6 +2,9 @@
 export interface SessionRow {
   id: number;
   admin_id: number;
+  /** 由后端预加载 admin 关联得出，管理员已删除时可能缺失 */
+  admin_name?: string | null;
+  admin_username?: string | null;
   device_type: string | null;
   login_ip: string | null;
   location: string | null;

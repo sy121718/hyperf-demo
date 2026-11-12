@@ -46,7 +46,7 @@ export default function AttachmentPage() {
   const effectiveScope: ListScope = canViewAll ? scope : "mine";
 
   // scope 切换会改变接口，必须把 scope 拼进 key，避免「全部/我的」共用缓存
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<AttachmentRow>({
       queryKey: [...queryKeys.attachment.all, effectiveScope],
       fetcher: (params) => getAttachmentList(effectiveScope, params),
@@ -209,6 +209,7 @@ export default function AttachmentPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

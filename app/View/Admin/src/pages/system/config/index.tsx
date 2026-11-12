@@ -38,7 +38,7 @@ export default function ConfigPage() {
   const canUpdate = usePermission("config:update");
   const canDelete = usePermission("config:delete");
 
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<ConfigRow>({
       queryKey: queryKeys.config.all,
       fetcher: getConfigList,
@@ -192,6 +192,7 @@ export default function ConfigPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

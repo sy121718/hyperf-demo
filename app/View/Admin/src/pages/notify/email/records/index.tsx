@@ -41,7 +41,7 @@ export default function EmailRecordsPage() {
   const effectiveScope: ListScope = canViewAll ? scope : "mine";
 
   // scope 决定接口，拼进 key 让「全部/我的」分开缓存
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<EmailRecordRow>({
       queryKey: [...queryKeys.email.all, "records", effectiveScope],
       fetcher: (params) => getEmailRecords(effectiveScope, params),
@@ -144,6 +144,7 @@ export default function EmailRecordsPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

@@ -64,7 +64,7 @@ export default function NoticePage() {
   const effectiveScope: ListScope = canViewAll ? scope : "mine";
 
   // scope 决定调哪个接口，拼进 key 才能让「全部/我的」各自缓存
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<NoticeRow>({
       queryKey: [...queryKeys.notice.all, effectiveScope],
       fetcher: (params) => getNoticeList(effectiveScope, params),
@@ -295,6 +295,7 @@ export default function NoticePage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

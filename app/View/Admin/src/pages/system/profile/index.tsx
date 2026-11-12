@@ -6,12 +6,12 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 import { Badge } from "@rbac/ui/components/ui/badge";
-import { Button } from "@rbac/ui/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rbac/ui/components/ui/card";
 import { Input } from "@rbac/ui/components/ui/input";
 import { Separator } from "@rbac/ui/components/ui/separator";
 import { PageHeader } from "@/components/shared/page-header";
 import { FormField } from "@/components/shared/form-field";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { changePassword, getProfile, updateProfile } from "@/api/profile";
 import { formatDateTime } from "@/lib/format";
 import { useAuthStore } from "@/stores/auth";
@@ -178,9 +178,13 @@ export default function ProfilePage() {
                 >
                   <Input id="avatar" {...profileForm.register("avatar")} />
                 </FormField>
-                <Button type="submit" disabled={profileMutation.isPending}>
-                  {profileMutation.isPending ? "保存中…" : "保存资料"}
-                </Button>
+                <SubmitButton
+                  type="submit"
+                  pending={profileMutation.isPending}
+                  pendingText="保存中…"
+                >
+                  保存资料
+                </SubmitButton>
               </form>
             </CardContent>
           </Card>
@@ -233,9 +237,14 @@ export default function ProfilePage() {
                     />
                   </FormField>
                 </div>
-                <Button type="submit" variant="outline" disabled={passwordMutation.isPending}>
-                  {passwordMutation.isPending ? "提交中…" : "修改密码"}
-                </Button>
+                <SubmitButton
+                  type="submit"
+                  variant="outline"
+                  pending={passwordMutation.isPending}
+                  pendingText="提交中…"
+                >
+                  修改密码
+                </SubmitButton>
               </form>
             </CardContent>
           </Card>

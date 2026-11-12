@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@rbac/ui/components/ui/select";
 import { PageHeader } from "@/components/shared/page-header";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { FormField } from "@/components/shared/form-field";
 import { getEmailTemplates, sendEmail, testSendEmail } from "@/api/email";
 import { queryKeys } from "@/lib/query-keys";
@@ -176,10 +177,15 @@ export default function EmailSendPage() {
                 <Textarea id="content" rows={10} className="font-mono text-xs" {...register("content")} />
               </FormField>
 
-              <Button type="submit" disabled={!canSend || sendMutation.isPending}>
+              <SubmitButton
+                type="submit"
+                disabled={!canSend}
+                pending={sendMutation.isPending}
+                pendingText="提交中…"
+              >
                 <Send />
-                {sendMutation.isPending ? "提交中…" : "提交发送"}
-              </Button>
+                提交发送
+              </SubmitButton>
             </form>
           </CardContent>
         </Card>
@@ -203,7 +209,7 @@ export default function EmailSendPage() {
               disabled={!canTest || !testAddress || testMutation.isPending}
               onClick={() => testMutation.mutate(testAddress)}
             >
-              {testMutation.isPending ? "发送中…" : "发送测试邮件"}
+              {"发送测试邮件"}
             </Button>
             <div className="flex flex-wrap gap-1">
               {parseRecipients(watch("recipients")).slice(0, 6).map((item) => (

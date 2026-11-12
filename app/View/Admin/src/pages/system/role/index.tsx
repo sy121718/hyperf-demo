@@ -39,7 +39,7 @@ export default function RolePage() {
   const canUpdate = usePermission("role:update");
   const canDelete = usePermission("role:delete");
 
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<RoleRow>({
       queryKey: queryKeys.role.all,
       fetcher: getRoleList,
@@ -180,6 +180,7 @@ export default function RolePage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}

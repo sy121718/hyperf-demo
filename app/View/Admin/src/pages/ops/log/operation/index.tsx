@@ -45,7 +45,7 @@ export default function OperationLogPage() {
   const effectiveScope: ListScope = canViewAll ? scope : "mine";
 
   // scope 决定调哪个接口，拼进 key 才能分出「全部/我的」两份缓存
-  const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  const { items, total, loading, refreshing, loadingMore, hasNextPage, sentinelRef, isMobile } =
     useResponsiveList<OperationLogRow>({
       queryKey: [...queryKeys.log.all, "operation", effectiveScope],
       fetcher: (params) => getOperationLogs(effectiveScope, params),
@@ -99,7 +99,11 @@ export default function OperationLogPage() {
         </div>
       ),
     },
-    { key: "admin_id", header: "管理员 ID", align: "right", cell: (row) => row.admin_id },
+    {
+      key: "admin_name",
+      header: "操作人",
+      cell: (row) => row.admin_name || `#${row.admin_id}`,
+    },
     { key: "create_time", header: "操作时间", cell: (row) => formatDateTime(row.create_time) },
   ];
 
@@ -155,6 +159,7 @@ export default function OperationLogPage() {
         items={items}
         total={total}
         loading={loading}
+        refreshing={refreshing}
         loadingMore={loadingMore}
         hasNextPage={hasNextPage}
         sentinelRef={sentinelRef}
