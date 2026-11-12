@@ -42,6 +42,8 @@ class Update
             paramError('无权修改管理员类型', 403);
         }
 
+        $this->assertSuperAdminChange($admin, $request, $currentUserId);
+
         if ($request->username && $request->username !== $admin->username) {
             ! $this->adminModel->isFieldUnique(['username' => $request->username], $id)
                 && paramError('用户名已被占用');
@@ -73,6 +75,38 @@ class Update
         } catch (Throwable $e) {
             Db::rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * 超管身份的变更限制.
+     *
+     * 系统只允许存在一个超管（数据库 uk_super_slot 兜底），因此：
+     * - 不能把普通管理员提升为超管（名额已被占用时）
+     * - 不能把自己降级，否则可能把系统锁死在没有管理员的境地
+     */
+    private function assertSuperAdminChange(SysAdminModel $admin, AdminRequest $request, int $currentUserId): void
+    {
+        if ($request->is_admin === null) {
+            return;
+        }
+
+        $wantSuper = $request->is_admin === 1;
+        $isSuper = $admin->is_admin === 1;
+
+        if ($wantSuper === $isSuper) {
+            return;
+        }
+
+        if ($wantSuper) {
+            $this->adminModel->hasOtherSuperAdmin()
+                && paramError('系统只允许存在一个超级管理员');
+            return;
+        }
+
+        // 降级：不能操作自己
+        if ($admin->id === $currentUserId) {
+            paramError('不能取消自己的超级管理员身份');
         }
     }
 }

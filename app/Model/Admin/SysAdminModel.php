@@ -69,6 +69,22 @@ class SysAdminModel extends BaseModel
         );
     }
 
+    /**
+     * 是否已有其他未删除的超级管理员.
+     *
+     * 与数据库唯一索引 uk_super_slot 口径一致：软删除的不算占用名额。
+     * 这里只做友好报错，真正的强约束在数据库层。
+     *
+     * @param null|int $excludeId 排除的管理员 ID（更新场景排除自己）
+     */
+    public function hasOtherSuperAdmin(?int $excludeId = null): bool
+    {
+        return static::query()
+            ->where('is_admin', 1)
+            ->when($excludeId !== null, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->exists();
+    }
+
     public function sessions()
     {
         return $this->hasMany(SysAdminSessionsModel::class, 'admin_id');

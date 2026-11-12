@@ -64,6 +64,8 @@ class AdminRequest extends BaseRequestDto
                 'phone' => 'nullable|string|max:20',
                 'avatar' => 'nullable|string|max:255',
                 'status' => 'nullable|in:0,1',
+                // 创建时允许传入，由 Action 显式拒绝，比静默丢弃更好排查
+                'is_admin' => 'nullable|in:0,1',
                 'role_ids' => 'nullable|array',
                 'role_ids.*' => 'integer|min:1',
             ],

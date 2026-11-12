@@ -156,6 +156,35 @@ class CreateTest extends TestCase
         (new Create($model, $this->mockAssignRoles()))->handle($this->dto());
     }
 
+    public function testCreateRejectsSuperAdminFlag(): void
+    {
+        // 超管只由初始化脚本产生，创建接口不允许设置
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('isFieldUnique')->andReturn(true);
+        $model->shouldReceive('create')->never();
+
+        $this->expectException(BusinessException::class);
+        $this->expectExceptionMessage('不能通过创建接口设置超级管理员');
+
+        (new Create($model, $this->mockAssignRoles()))->handle($this->dto(['is_admin' => 1]));
+    }
+
+    public function testCreateStoresZeroWhenIsAdminExplicitlyFalse(): void
+    {
+        // 显式传 0 是允许的，用来表达“这是普通管理员”
+        $captured = null;
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('isFieldUnique')->andReturn(true);
+        $model->shouldReceive('create')->withArgs(function (array $data) use (&$captured) {
+            $captured = $data;
+            return true;
+        })->andReturn($this->fakeCreated());
+
+        (new Create($model, $this->mockAssignRoles()))->handle($this->dto(['is_admin' => 0]));
+
+        $this->assertSame(0, $captured['is_admin']);
+    }
+
     private function mockModel(bool $usernameUnique = true): MockInterface
     {
         $model = Mockery::mock(SysAdminModel::class);

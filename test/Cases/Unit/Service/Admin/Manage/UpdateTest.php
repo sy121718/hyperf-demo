@@ -219,16 +219,60 @@ class UpdateTest extends TestCase
         $this->buildAction($model)->handle(AdminRequest::fromArray(['id' => 5, 'is_admin' => 1]));
     }
 
-    public function testSuperAdminCanChangeIsAdmin(): void
+    public function testCannotPromoteWhenSuperAdminAlreadyExists(): void
     {
+        // 超管全库只能有一个，名额被占用时不能把别人提上来
         $admin = $this->fakeAdmin();
         $model = Mockery::mock(SysAdminModel::class);
         $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
         $model->shouldReceive('isFieldUnique')->andReturn(true);
+        $model->shouldReceive('hasOtherSuperAdmin')->andReturn(true);
 
-        $result = $this->buildAction($model)->handle($this->dto(['is_admin' => 1]));
+        $this->expectException(BusinessException::class);
+        $this->expectExceptionMessage('系统只允许存在一个超级管理员');
+
+        $this->buildAction($model)->handle($this->dto(['is_admin' => 1]));
+    }
+
+    public function testCannotDemoteSelf(): void
+    {
+        // 自己把自己降级会让系统失去唯一超管
+        Context::set('auth_user', ['id' => 2, 'username' => 'admin', 'is_admin' => 1]);
+
+        $admin = $this->fakeAdmin(['id' => 2, 'is_admin' => 1]);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
+        $model->shouldReceive('isFieldUnique')->andReturn(true);
+
+        $this->expectException(BusinessException::class);
+        $this->expectExceptionMessage('不能取消自己的超级管理员身份');
+
+        $this->buildAction($model)->handle($this->dto(['id' => 2, 'is_admin' => 0]));
+    }
+
+    public function testDemoteOtherSuperAdminWhenSlotFree(): void
+    {
+        // 把别的超管降级是允许的（只要不是操作自己）
+        $admin = $this->fakeAdmin(['id' => 2, 'is_admin' => 1]);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')->with(2, '管理员')->andReturn($admin);
+        $model->shouldReceive('isFieldUnique')->andReturn(true);
+
+        $result = $this->buildAction($model)->handle($this->dto(['id' => 2, 'is_admin' => 0]));
 
         $this->assertIsArray($result);
+    }
+
+    public function testIsAdminUnchangedSkipsSuperAdminChecks(): void
+    {
+        // 不涉及超管身份变更时不该触发任何额外判断
+        $admin = $this->fakeAdmin(['is_admin' => 0]);
+        $model = Mockery::mock(SysAdminModel::class);
+        $model->shouldReceive('findOrNotFound')->andReturn($admin);
+        $model->shouldReceive('isFieldUnique')->andReturn(true);
+        $model->shouldReceive('hasOtherSuperAdmin')->never();
+
+        $this->buildAction($model)->handle($this->dto(['id' => 2, 'is_admin' => 0]));
     }
 
     // ==================== DTO 映射 ====================

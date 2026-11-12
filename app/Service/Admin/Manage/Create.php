@@ -32,6 +32,9 @@ class Create
         ! $this->adminModel->isFieldUnique(['username' => $username])
             && paramError('用户名已存在');
 
+        // 建成超管没有任何入口：超管只由初始化脚本产生，且全库仅一个
+        $request->is_admin === 1 && paramError('不能通过创建接口设置超级管理员');
+
         $data = $request->toDbArrayFiltered();
         $data['password'] = password_hash((string) $request->password, PASSWORD_BCRYPT);
 
