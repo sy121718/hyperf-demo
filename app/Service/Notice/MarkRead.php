@@ -24,10 +24,15 @@ class MarkRead
     ) {
     }
 
-    public function handle(NoticeRequest $request): bool
+    /**
+     * 标记通知已读.
+     *
+     * userId 必须由调用方传登录态，不能取请求体：否则任何登录用户都能把
+     * 别人的通知刷成已读，并且会污染对方的未读数。
+     */
+    public function handle(NoticeRequest $request, int $userId): bool
     {
         $noticeId = (int) $request->notice_id;
-        $userId = (int) $request->user_id;
 
         requireId($userId, '用户');
 

@@ -44,8 +44,6 @@ class NoticeRequest extends BaseRequestDto
 
     public ?int $notice_id = null;
 
-    public ?int $user_id = null;
-
     public ?int $target_type = null;
 
     public ?array $target_ids = null;
@@ -90,9 +88,9 @@ class NoticeRequest extends BaseRequestDto
                 'target_ids' => 'nullable|array',
                 'target_ids.*' => 'integer|min:1',
             ],
+            // 已读记录归属登录用户，不校验也不接受请求体里的 user_id
             'markRead' => [
                 'notice_id' => 'required|integer|min:1',
-                'user_id' => 'required|integer|min:1',
             ],
             'batchPush' => [
                 'notice_id' => 'required|integer|min:1',
@@ -114,7 +112,7 @@ class NoticeRequest extends BaseRequestDto
     protected function virtualFields(): array
     {
         return [
-            'id', 'notice_id', 'user_id', 'target_type', 'target_ids',
+            'id', 'notice_id', 'target_type', 'target_ids',
             'target_users', 'start_date', 'end_date',
         ];
     }

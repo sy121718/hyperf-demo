@@ -137,10 +137,12 @@ class NoticeTest extends TestCase
 
         $readModel = Mockery::mock(NoticeReadModel::class);
         $readModel->shouldReceive('where->where->exists')->andReturn(false);
-        $readModel->shouldReceive('create')->once()->andReturn(true);
+        $readModel->shouldReceive('create')->once()->with(Mockery::on(
+            static fn (array $row) => $row['user_id'] === 1 && $row['notice_id'] === 1
+        ))->andReturn(true);
 
         $action = new MarkRead($noticeModel, $readModel);
-        $this->assertTrue($action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 1])));
+        $this->assertTrue($action->handle(NoticeRequest::fromArray(['notice_id' => 1]), 1));
     }
 
     public function testMarkReadAlreadyRead(): void
@@ -151,7 +153,7 @@ class NoticeTest extends TestCase
         $readModel->shouldReceive('where->where->exists')->andReturn(true);
 
         $action = new MarkRead($noticeModel, $readModel);
-        $this->assertTrue($action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 1])));
+        $this->assertTrue($action->handle(NoticeRequest::fromArray(['notice_id' => 1]), 1));
     }
 
     public function testMarkReadZeroUserId(): void
@@ -162,7 +164,27 @@ class NoticeTest extends TestCase
         $action = new MarkRead($noticeModel, $readModel);
 
         $this->expectException(BusinessException::class);
-        $action->handle(NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 0]));
+        $action->handle(NoticeRequest::fromArray(['notice_id' => 1]), 0);
+    }
+
+    /**
+     * 请求体里伪造的 user_id 不能改变已读记录归属，必须以传入的登录用户为准.
+     */
+    public function testMarkReadIgnoresUserIdInRequestBody(): void
+    {
+        $noticeModel = Mockery::mock(NoticeModel::class);
+        $noticeModel->shouldReceive('where->increment')->once();
+
+        $readModel = Mockery::mock(NoticeReadModel::class);
+        $readModel->shouldReceive('where->where->exists')->andReturn(false);
+        $readModel->shouldReceive('create')->once()->with(Mockery::on(
+            static fn (array $row) => $row['user_id'] === 7
+        ))->andReturn(true);
+
+        $action = new MarkRead($noticeModel, $readModel);
+        $request = NoticeRequest::fromArray(['notice_id' => 1, 'user_id' => 999]);
+
+        $this->assertTrue($action->handle($request, 7));
     }
 
     // ==================== GetUnreadCount ====================

@@ -60,7 +60,8 @@ class NoticeController extends AbstractController
 
     public function markRead(NoticeRequest $request): array
     {
-        container()->get(NoticeAction\MarkRead::class)->handle($request);
+        // 只能标记自己的通知，userId 由登录态决定，不接受请求体传入
+        container()->get(NoticeAction\MarkRead::class)->handle($request, (int) currentUser('id'));
         return $this->success(null, '标记成功');
     }
 
