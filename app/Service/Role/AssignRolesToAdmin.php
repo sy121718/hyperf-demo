@@ -37,17 +37,22 @@ class AssignRolesToAdmin
         requireId($adminId, '管理员');
         ! empty($roleIds) || paramError('角色ID不能为空');
 
-        [$admin, $existCount] = parallel([
+        [$admin, $roles] = parallel([
             fn () => $this->adminModel->find($adminId),
-            fn () => $this->roleModel->whereIn('id', $roleIds)->count(),
+            fn () => $this->roleModel->whereIn('id', $roleIds)->get(['role_code']),
         ]);
 
         ! $admin && notFound('管理员');
-        $existCount === count($roleIds) || paramError('部分角色不存在');
+        $roles->count() === count($roleIds) || paramError('部分角色不存在');
+
+        // 关联键是 role_code：roles() 的 belongsToMany 以
+        // sys_admin_role.role_code ↔ sys_role.role_code 连接，sync() 会把传入的值
+        // 直接写进 role_code 列。传自增 id 会写成 role_code='1' 这种无效记录。
+        $roleCodes = $roles->pluck('role_code')->all();
 
         Db::beginTransaction();
         try {
-            $admin->roles()->sync($roleIds);
+            $admin->roles()->sync($roleCodes);
             Db::commit();
             CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
         } catch (Throwable $e) {
