@@ -1,68 +1,56 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { useEffect } from "react";
+import { Link, Outlet, useNavigate } from "react-router-dom";
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@rbac/ui/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@rbac/ui/components/ui/dropdown-menu";
+import { MobileNav } from "@/components/layout/mobile-nav";
+import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { logout } from "@/api/auth";
+import { getProfile } from "@/api/profile";
+import { usePermissionSync } from "@/lib/permission";
 import { useAuthStore } from "@/stores/auth";
-import { MENU_TYPE, type MenuNode } from "@/types/menu";
-
-/** 菜单树 -> 侧边栏。目录只做分组，不生成链接 */
-function SidebarMenu({
-  nodes,
-  currentPath,
-  depth = 0,
-}: {
-  nodes: MenuNode[];
-  currentPath: string;
-  depth?: number;
-}) {
-  return (
-    <ul className={depth === 0 ? "space-y-1" : "mt-1 space-y-1 pl-3"}>
-      {nodes
-        .filter((node) => node.is_hidden !== 1)
-        .map((node) => {
-          const isDirectory = node.type === MENU_TYPE.DIRECTORY;
-          const target = node.path ? `/admin${node.path}` : null;
-          const active = target !== null && currentPath.startsWith(target);
-
-          return (
-            <li key={node.id}>
-              {isDirectory || !target ? (
-                <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                  {node.title ?? node.menu_name}
-                </p>
-              ) : (
-                <Link
-                  to={target}
-                  className={`block rounded-md px-2 py-1.5 text-sm transition-colors ${
-                    active
-                      ? "bg-accent text-accent-foreground"
-                      : "text-foreground/80 hover:bg-muted"
-                  }`}
-                >
-                  {node.title ?? node.menu_name}
-                </Link>
-              )}
-              {node.children?.length ? (
-                <SidebarMenu
-                  nodes={node.children}
-                  currentPath={currentPath}
-                  depth={depth + 1}
-                />
-              ) : null}
-            </li>
-          );
-        })}
-    </ul>
-  );
-}
+import type { MenuNode } from "@/types/menu";
 
 export default function AdminLayout({ menus }: { menus: MenuNode[] }) {
-  const location = useLocation();
   const navigate = useNavigate();
   const admin = useAuthStore((state) => state.admin);
+  const setAdmin = useAuthStore((state) => state.setAdmin);
   const reset = useAuthStore((state) => state.reset);
+
+  // 权限码随登录态拉取，供按钮显隐与「全部/我的」视图切换
+  usePermissionSync();
+
+  /**
+   * admin 信息只存在内存里，刷新后会丢。
+   * 这里用 profile 接口补回来，否则顶栏头像、权限判断都会落空。
+   */
+  useEffect(() => {
+    if (admin) {
+      return;
+    }
+    let cancelled = false;
+    void getProfile()
+      .then((profile) => {
+        if (!cancelled) {
+          setAdmin(profile);
+        }
+      })
+      .catch(() => {
+        // 401 由 http 拦截器统一跳登录，这里不重复处理
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [admin, setAdmin]);
 
   const handleLogout = async () => {
     try {
@@ -71,34 +59,55 @@ export default function AdminLayout({ menus }: { menus: MenuNode[] }) {
       // 即使后端登出失败也要清本地状态，避免卡在无效会话
       reset();
       toast.success("已退出登录");
-      navigate("/admin/login", { replace: true });
+      navigate("/login", { replace: true });
     }
   };
 
   return (
     <div className="flex min-h-svh">
-      <aside className="w-60 shrink-0 border-r bg-sidebar text-sidebar-foreground">
-        <div className="flex h-14 items-center border-b px-4 font-semibold">
-          RBAC 后台
-        </div>
-        <nav className="p-2">
-          <SidebarMenu nodes={menus} currentPath={location.pathname} />
-        </nav>
-      </aside>
+      <SidebarNav menus={menus} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b px-4">
-          <span className="text-sm text-muted-foreground">
-            {admin ? `你好，${admin.name ?? admin.username}` : ""}
-          </span>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut />
-            退出
-          </Button>
+        <header className="flex h-14 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur md:px-6">
+          {/* 窄屏侧边栏收起，导航改走抽屉 */}
+          <div className="flex items-center gap-2">
+            <div className="md:hidden">
+              <MobileNav menus={menus} />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground">管理控制台</span>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <UserRound />
+                {admin ? (admin.name ?? admin.username) : "未登录"}
+                <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                {admin ? `@${admin.username}` : "未知账号"}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/system/profile">
+                  <UserRound />
+                  个人中心
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onSelect={() => void handleLogout()}>
+                <LogOut />
+                退出登录
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
-        <main className="flex-1 p-6">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto bg-muted/20 p-4 md:p-6 lg:p-8">
+          <div className="mx-auto w-full max-w-[1400px] space-y-5">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

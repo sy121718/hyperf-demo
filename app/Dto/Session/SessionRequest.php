@@ -30,7 +30,7 @@ class SessionRequest extends BaseRequestDto
     public function rules(): array
     {
         return match ($this->getRouteAction()) {
-            'list' => [
+            'list', 'myList' => [
                 ...$this->paginationRules(),
                 'username' => 'nullable|string|max:50',
             ],

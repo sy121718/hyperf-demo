@@ -45,12 +45,17 @@ class RevokeRole
         ! $admin && notFound('管理员');
         $roles->count() === count($roleIds) || paramError('部分角色不存在');
 
-        $currentRoleIds = $admin->roles->pluck('id')->toArray();
-        $remainingRoleIds = array_diff($currentRoleIds, $roleIds);
+        // 关联键是 role_code 不是自增 id：roles() 的 belongsToMany 以
+        // sys_admin_role.role_code ↔ sys_role.role_code 连接，sync() 会把传入的
+        // 值直接写进 role_code 列。之前传 pluck('id')，结果是原有角色全被删掉、
+        // 换成一条 role_code='2' 的无效记录。
+        $currentRoleCodes = $admin->roles->pluck('role_code')->toArray();
+        $revokeCodes = $roles->pluck('role_code')->toArray();
+        $remainingRoleCodes = array_values(array_diff($currentRoleCodes, $revokeCodes));
 
         Db::beginTransaction();
         try {
-            $admin->roles()->sync($remainingRoleIds);
+            $admin->roles()->sync($remainingRoleCodes);
             Db::commit();
             CacheKeys::flush(CacheKeys::PERM_CODES, CacheKeys::MENU_USER);
         } catch (Throwable $e) {

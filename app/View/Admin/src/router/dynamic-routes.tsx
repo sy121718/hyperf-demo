@@ -37,7 +37,7 @@ function LazyPage({ component }: { component: string }) {
 }
 
 export interface DynamicRoute {
-  /** 相对 /admin 的路径，如 "system/admin" */
+  /** 相对 basename 的路径，如 "system/admin" */
   path: string;
   element: ReactElement;
 }
@@ -45,7 +45,8 @@ export interface DynamicRoute {
 /** 生成挂在 AdminLayout 下的子路由 */
 export function buildDynamicRoutes(menus: MenuNode[]): DynamicRoute[] {
   return flatten(menus).map((node) => ({
-    // 后端 path 以 / 开头，去掉后作为 /admin 下的相对路径
+    // 后端 path 以 / 开头，去掉后作为根路由下的相对路径；
+    // /admin 前缀由 BrowserRouter basename 统一处理
     path: (node.path as string).replace(/^\/+/, ""),
     element: <LazyPage component={node.component as string} />,
   }));

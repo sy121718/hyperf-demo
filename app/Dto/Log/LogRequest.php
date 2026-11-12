@@ -36,6 +36,11 @@ class LogRequest extends BaseRequestDto
      */
     public ?string $result = null;
 
+    /**
+     * 登录日志结果：0 失败 / 1 成功.
+     */
+    public ?int $status = null;
+
     public ?string $ip = null;
 
     public ?string $http_method = null;
@@ -47,15 +52,16 @@ class LogRequest extends BaseRequestDto
     public function rules(): array
     {
         return match ($this->getRouteAction()) {
-            'loginLog' => [
+            'loginLog', 'myLoginLog' => [
                 ...$this->paginationRules(),
                 'user_id' => 'nullable|integer|min:1',
                 'username' => 'nullable|string|max:50',
                 'ip' => 'nullable|string|max:50',
+                'status' => 'nullable|in:0,1',
                 'date_from' => 'nullable|date',
                 'date_to' => 'nullable|date',
             ],
-            'operationLog' => [
+            'operationLog', 'myOperationLog' => [
                 ...$this->paginationRules(),
                 'admin_id' => 'nullable|integer|min:1',
                 'result' => 'nullable|string|in:success,failed',
@@ -70,6 +76,6 @@ class LogRequest extends BaseRequestDto
 
     protected function virtualFields(): array
     {
-        return ['user_id', 'admin_id', 'username', 'result', 'ip', 'http_method', 'date_from', 'date_to'];
+        return ['user_id', 'admin_id', 'username', 'result', 'status', 'ip', 'http_method', 'date_from', 'date_to'];
     }
 }

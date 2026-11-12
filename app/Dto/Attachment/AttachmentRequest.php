@@ -79,7 +79,7 @@ class AttachmentRequest extends BaseRequestDto
                 'url' => 'nullable|string|max:500',
                 'extra_info' => 'nullable|array',
             ],
-            'list' => [
+            'list', 'myList' => [
                 ...$this->paginationRules(),
                 'category_id' => 'nullable|integer|min:1',
                 'file_type' => 'nullable|string|max:50',

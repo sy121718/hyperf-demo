@@ -2,7 +2,8 @@ import axios, { AxiosError, type AxiosRequestConfig } from "axios";
 import { toast } from "sonner";
 
 import type { ApiResponse, ValidationErrors } from "@/types/api";
-import { clearToken, getToken, setToken } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
+import { useAuthStore } from "@/stores/auth";
 
 /** 业务异常：带上后端 code 与字段级错误，供表单与路由层区分处理 */
 export class ApiError extends Error {
@@ -29,13 +30,24 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-/** 401 族：清登录态并跳转登录页，带上来源路径供登录后回跳 */
+/**
+ * 401 族：清登录态并跳转登录页，带上来源路径供登录后回跳。
+ *
+ * 这里用 window.location 而不是 react-router 的 navigate——拦截器在
+ * 组件树之外执行。BrowserRouter 的 basename 是 /admin，所以跳转地址
+ * 要带前缀，而 redirect 参数存的是去掉前缀的路径，登录后由 router 处理。
+ */
 function handleUnauthorized(): void {
-  clearToken();
-  const current = `${window.location.pathname}${window.location.search}`;
-  const target = `/admin/login?redirect=${encodeURIComponent(current)}`;
-  if (window.location.pathname !== "/admin/login") {
-    window.location.replace(target);
+  // 走 store.reset() 同时清 localStorage 与内存态，路由会跟着切回登录页
+  useAuthStore.getState().reset();
+  const basename = "/admin";
+  const path = window.location.pathname.startsWith(basename)
+    ? window.location.pathname.slice(basename.length)
+    : window.location.pathname;
+  const current = `${path || "/"}${window.location.search}`;
+
+  if (path !== "/login") {
+    window.location.replace(`${basename}/login?redirect=${encodeURIComponent(current)}`);
   }
 }
 
@@ -44,7 +56,8 @@ client.interceptors.response.use(
     // 滑动续期：后端在剩余有效期不足时下发新 token，必须替换否则会被登出
     const newToken = response.headers["new-token"];
     if (typeof newToken === "string" && newToken) {
-      setToken(newToken);
+      // 走 store 才能同步内存态，否则续期后 store.token 还是旧值
+      useAuthStore.getState().setToken(newToken);
     }
 
     const body = response.data as ApiResponse<unknown>;

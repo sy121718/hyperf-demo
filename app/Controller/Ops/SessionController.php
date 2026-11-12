@@ -25,6 +25,12 @@ class SessionController extends AbstractController
         return $this->success(SessionResponse::page($result), '获取成功');
     }
 
+    public function myList(SessionRequest $request): array
+    {
+        $result = container()->get(SessionAction\GetMySessions::class)->handle($request);
+        return $this->success(SessionResponse::page($result), '获取成功');
+    }
+
     public function info(): array
     {
         $id = (int) $this->request->route('id', 0);

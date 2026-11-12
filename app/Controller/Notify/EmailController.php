@@ -32,6 +32,12 @@ class EmailController extends AbstractController
         return $this->success(EmailResponse::page($result), '获取成功');
     }
 
+    public function mySendRecords(EmailRequest $request): array
+    {
+        $result = container()->get(SendAction\GetMyRecordList::class)->handle($request);
+        return $this->success(EmailResponse::page($result), '获取成功');
+    }
+
     public function testSend(EmailRequest $request): array
     {
         container()->get(SendAction\Test::class)->handle($request);

@@ -494,6 +494,50 @@ interface MenuNode {
 - 未匹配路由渲染 404 页。
 - 数据请求 403 时渲染 403 页，不跳转。
 
+### 9.4 列表页：一份 columns，桌面表格 + 手机卡片自动派生
+
+列表页**只写一份 `columns`**，手机端卡片由 `ResponsiveDataList` 自动推导，不要手写第二套 UI。
+新增列表页只需三步：
+
+```tsx
+// 1. 数据源：桌面服务端分页 / 手机无限滚动，同一套参数
+const { items, total, loading, loadingMore, hasNextPage, sentinelRef, isMobile } =
+  useResponsiveList<RoleRow>({
+    queryKey: queryKeys.role.all,
+    fetcher: getRoleList,
+    params: listState.params,
+    page: listState.page,
+    limit: listState.limit,
+  });
+
+// 2. 列定义里用 mobile 标记手机端角色
+const columns: DataTableColumn<RoleRow>[] = [
+  { key: "role_name", header: "角色名称", mobile: "title" },   // 卡片标题
+  { key: "status", header: "状态", mobile: "badge", cell: ... }, // 标题右侧徽标
+  { key: "id", header: "ID", mobile: "hidden" },               // 手机端不显示
+  { key: "role_code", header: "角色标识", cell: ... },          // 自动成为字段
+  { key: "actions", header: "操作", cell: renderActions },      // 卡片底部操作区
+];
+
+// 3. 渲染
+<ResponsiveDataList
+  columns={columns} items={items} total={total} loading={loading}
+  loadingMore={loadingMore} hasNextPage={hasNextPage}
+  sentinelRef={sentinelRef} isMobile={isMobile}
+  rowKey={(row) => row.id}
+  page={listState.page} limit={listState.limit}
+  onPageChange={listState.setPage} onLimitChange={listState.setLimit}
+/>
+```
+
+约定：
+
+- `mobile` 取值 `title` / `badge` / `hidden`，不填默认作为卡片字段；`mobileLabel` 可覆盖字段名。
+- 手机上无限滚动，**后端仍是普通分页**（`page` + `limit`），`useResponsiveList` 把多页结果拼起来；剩余不足 2 页时自动预取。
+- 工具条统一用 `ListToolbar`：桌面平铺筛选控件，手机只留搜索 + 新增，其余筛选收进底部抽屉。页面只传 `filters` 与 `hasActiveFilters`，不要自己判断断点。
+- 树形列表用 `TreeTable`（桌面）+ `TreeMobileList`（手机），二者共用同一份节点数据。
+- 新增页面时**不要**再引入 `MobileCardList` 手写字段数组，那是底层组件，由 `ResponsiveDataList` 使用。
+
 ---
 
 ## 十、命名与代码规范
@@ -631,6 +675,8 @@ export default defineConfig({
 - [ ] 后端菜单 `component` 字段与目录路径一致
 - [ ] 接口函数写在 `api/<module>.ts`，类型写在 `types/<module>.ts`
 - [ ] 列表使用服务端分页，参数为 `page / limit / search / sort`
+- [ ] 列表用 `useResponsiveList` + `ResponsiveDataList`，columns 标好 `mobile` 语义，未手写手机端卡片
+- [ ] 工具条用 `ListToolbar`，筛选控件走 `filters`，未自行判断断点
 - [ ] 写操作成功后 `invalidateQueries`
 - [ ] 按钮按权限码用 `<Can>` 包裹
 - [ ] 表单使用 react-hook-form + zod，错误按字段回填

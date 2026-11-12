@@ -33,7 +33,8 @@ class GetList
 
         return $this->operationLogModel
             ->when($resultValue !== null, fn ($q) => $q->where('result', $resultValue))
-            ->filter($request->toQueryArray())
+            // result 已映射成 1/0，不能再交给通用 filter 按 success/failed 原文比较
+            ->filter(array_diff_key($request->toQueryArray(), ['result' => true]))
             ->when($request->search, fn ($q) => $q->whereAny(
                 $this->operationLogModel->getSearchableFields(),
                 'like',

@@ -16,6 +16,7 @@ use App\Controller\AbstractController;
 use App\Dto\Admin\AdminRequest;
 use App\Dto\Auth\LoginRequest;
 use App\Service\Admin\Auth as AuthAction;
+use App\Service\Admin\Permission as PermissionAction;
 use App\Service\Admin\Profile as ProfileAction;
 
 class AuthController extends AbstractController
@@ -35,6 +36,15 @@ class AuthController extends AbstractController
     public function profile(): array
     {
         $result = container()->get(ProfileAction\GetProfile::class)->handle();
+        return $this->success($result, '获取成功');
+    }
+
+    /**
+     * 当前登录用户的权限码，前端用于按钮显隐与「全部/我的」视图切换。
+     */
+    public function permissions(): array
+    {
+        $result = container()->get(PermissionAction\GetMine::class)->handle();
         return $this->success($result, '获取成功');
     }
 

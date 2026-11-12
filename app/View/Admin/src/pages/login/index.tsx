@@ -38,21 +38,24 @@ export default function LoginPage() {
       setSession(result.token, result.admin_info);
       toast.success("登录成功");
       // 回跳到跳转前的页面，缺省进后台首页
-      navigate(params.get("redirect") ?? "/admin", { replace: true });
+      navigate(params.get("redirect") ?? "/", { replace: true });
     } finally {
       setSubmitting(false);
     }
   });
 
   return (
-    <div className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
+    <div className="flex min-h-svh items-center justify-center bg-sidebar p-6">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-5 rounded-xl border bg-background p-8 shadow-sm"
+        className="w-full max-w-sm space-y-6 rounded-2xl border border-border/60 bg-card p-8 shadow-xl shadow-foreground/5"
       >
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold">RBAC 管理后台</h1>
-          <p className="text-sm text-muted-foreground">请使用管理员账号登录</p>
+        <div className="space-y-2">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
+            RB
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight">登录管理后台</h1>
+          <p className="text-sm text-muted-foreground">使用管理员账号继续</p>
         </div>
 
         <div className="space-y-2">

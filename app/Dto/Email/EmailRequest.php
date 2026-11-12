@@ -67,7 +67,7 @@ class EmailRequest extends BaseRequestDto
             'testSend' => [
                 'to' => 'required|email|max:100',
             ],
-            'sendRecords' => [
+            'sendRecords', 'mySendRecords' => [
                 ...$this->paginationRules(),
                 'status' => 'nullable|in:0,1,2,3',
                 'template_id' => 'nullable|integer|min:1',

@@ -7,8 +7,8 @@
  */
 const modules = import.meta.glob([
   "../pages/**/index.tsx",
-  // 登录/403/404 是固定入口页，会被静态 import，排除掉避免重复打包
-  "!../pages/{login,forbidden,not-found}/index.tsx",
+  // 登录/403/404/首页是固定入口页，会被静态 import，排除掉避免重复打包警告
+  "!../pages/{login,forbidden,not-found,dashboard}/index.tsx",
 ]);
 
 /** 把 "system/admin/index" 转成 glob 映射表的 key */

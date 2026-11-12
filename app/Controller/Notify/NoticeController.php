@@ -19,6 +19,25 @@ use App\Service\Notice as NoticeAction;
 
 class NoticeController extends AbstractController
 {
+    public function list(NoticeRequest $request): array
+    {
+        $result = container()->get(NoticeAction\GetList::class)->handle($request);
+        return $this->success(NoticeResponse::page($result), '获取成功');
+    }
+
+    public function myList(NoticeRequest $request): array
+    {
+        $result = container()->get(NoticeAction\GetMyList::class)->handle($request);
+        return $this->success(NoticeResponse::page($result), '获取成功');
+    }
+
+    public function info(): array
+    {
+        $id = (int) $this->request->route('id', 0);
+        $result = container()->get(NoticeAction\GetInfo::class)->handle($id);
+        return $this->success(NoticeResponse::detail($result), '获取成功');
+    }
+
     public function create(NoticeRequest $request): array
     {
         $id = container()->get(NoticeAction\Create::class)->handle($request);

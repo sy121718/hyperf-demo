@@ -97,6 +97,8 @@ class NoticeRequest extends BaseRequestDto
                 'target_users' => 'required|array|min:1',
                 'target_users.*' => 'integer|min:1',
             ],
+            // 详情只需主键，走路由参数
+            'info' => [],
             'statistics' => [
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date',
@@ -104,6 +106,14 @@ class NoticeRequest extends BaseRequestDto
             'userNotices' => [
                 ...$this->paginationRules(),
                 'notice_type' => 'nullable|integer|min:0',
+            ],
+            // 管理端列表：多返回 status / is_top / is_popup 三类筛选
+            'list', 'myList' => [
+                ...$this->paginationRules(),
+                'notice_type' => 'nullable|integer|min:0',
+                'is_top' => 'nullable|in:0,1',
+                'is_popup' => 'nullable|in:0,1',
+                'status' => 'nullable|in:0,1,2',
             ],
             default => [],
         };

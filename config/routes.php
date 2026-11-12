@@ -27,6 +27,7 @@ Router::addGroup('/api/', function () {
     // 认证 & 个人中心
     Router::post('auth/logout', 'App\Controller\System\AuthController@logout');
     Router::get('auth/profile', 'App\Controller\System\AuthController@profile');
+    Router::get('auth/permissions', 'App\Controller\System\AuthController@permissions');
     Router::put('auth/profile', 'App\Controller\System\AuthController@updateProfile');
     Router::post('auth/change-password', 'App\Controller\System\AuthController@changePassword');
 
@@ -105,6 +106,7 @@ Router::addGroup('/api/', function () {
 
     // 附件管理
     Router::get('attachment/list', 'App\Controller\System\AttachmentController@list');
+    Router::get('attachment/my-list', 'App\Controller\System\AttachmentController@myList');
     Router::post('attachment/upload', 'App\Controller\System\AttachmentController@upload');
     Router::put('attachment/update/{id:\d+}', 'App\Controller\System\AttachmentController@update');
     Router::delete('attachment/delete/{id:\d+}', 'App\Controller\System\AttachmentController@delete');
@@ -121,6 +123,7 @@ Router::addGroup('/api/', function () {
     // 邮件管理
     Router::post('email/send', 'App\Controller\Notify\EmailController@send');
     Router::get('email/records', 'App\Controller\Notify\EmailController@sendRecords');
+    Router::get('email/my-records', 'App\Controller\Notify\EmailController@mySendRecords');
     Router::post('email/test', 'App\Controller\Notify\EmailController@testSend');
     Router::get('email/template/list', 'App\Controller\Notify\EmailController@templateList');
     Router::post('email/template/create', 'App\Controller\Notify\EmailController@templateCreate');
@@ -128,6 +131,9 @@ Router::addGroup('/api/', function () {
     Router::delete('email/template/delete/{id:\d+}', 'App\Controller\Notify\EmailController@templateDelete');
 
     // 通知公告
+    Router::get('notice/list', 'App\Controller\Notify\NoticeController@list');
+    Router::get('notice/my-list', 'App\Controller\Notify\NoticeController@myList');
+    Router::get('notice/info/{id:\d+}', 'App\Controller\Notify\NoticeController@info');
     Router::post('notice/create', 'App\Controller\Notify\NoticeController@create');
     Router::put('notice/update/{id:\d+}', 'App\Controller\Notify\NoticeController@update');
     Router::delete('notice/delete/{id:\d+}', 'App\Controller\Notify\NoticeController@delete');
@@ -142,6 +148,7 @@ Router::addGroup('/api/', function () {
 
     // 会话管理
     Router::get('session/list', 'App\Controller\Ops\SessionController@list');
+    Router::get('session/my-list', 'App\Controller\Ops\SessionController@myList');
     Router::get('session/info/{id:\d+}', 'App\Controller\Ops\SessionController@info');
     Router::post('session/kickout', 'App\Controller\Ops\SessionController@kickout');
     Router::post('session/batch-kickout', 'App\Controller\Ops\SessionController@batchKickout');
@@ -154,4 +161,6 @@ Router::addGroup('/api/', function () {
     // 日志
     Router::get('log/login', 'App\Controller\Ops\LogController@loginLog');
     Router::get('log/operation', 'App\Controller\Ops\LogController@operationLog');
+    Router::get('log/my-login', 'App\Controller\Ops\LogController@myLoginLog');
+    Router::get('log/my-operation', 'App\Controller\Ops\LogController@myOperationLog');
 }, ['middleware' => [JwtAuthMiddleware::class, PermissionMiddleware::class]]);
