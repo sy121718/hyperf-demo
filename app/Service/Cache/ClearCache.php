@@ -34,6 +34,12 @@ class ClearCache
 
     public function handle(CacheRequest $request): array
     {
+        // 缓存是全站共享的，清错模块会影响所有在线用户，只允许超管操作
+        $isSuperAdmin = currentUser('is_admin') == 1;
+        if (! $isSuperAdmin) {
+            paramError('只有超级管理员可以清除缓存', 403);
+        }
+
         $modules = $request->modules ?? [];
         $targets = empty($modules) ? array_keys(self::MODULES) : $modules;
         $cleared = [];

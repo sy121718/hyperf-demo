@@ -36,11 +36,6 @@ class CacheController extends AbstractController
      */
     public function clear(CacheRequest $request): array
     {
-        $isSuperAdmin = currentUser('is_admin') == 1;
-        if (! $isSuperAdmin) {
-            paramError('只有超级管理员可以清除缓存', 403);
-        }
-
         $result = container()->get(CacheAction\ClearCache::class)->handle($request);
 
         $msg = $result['is_full_clear'] ? '全部缓存已清除' : '选中模块缓存已清除';
