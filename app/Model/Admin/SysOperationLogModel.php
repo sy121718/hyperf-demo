@@ -17,10 +17,6 @@ use App\Model\Rbac\SysMenuModel;
 
 class SysOperationLogModel extends BaseModel
 {
-    public const UPDATED_AT = null;
-
-    public bool $timestamps = true;
-
     protected ?string $table = 'sys_operation_logs';
 
     protected ?string $dateFormat = 'Y-m-d H:i:s.v';
@@ -29,7 +25,7 @@ class SysOperationLogModel extends BaseModel
         'admin_id', 'menu_id', 'perm_dict_id', 'service_method',
         'operation', 'api_path', 'http_method', 'request_data',
         'response_data', 'ip', 'location', 'user_agent',
-        'result', 'content', 'execution_time', 'create_by',
+        'result', 'content', 'execution_time', 'create_by', 'update_by',
     ];
 
     protected array $casts = [

@@ -25,6 +25,8 @@ class GetList
     public function handle(SessionRequest $request): mixed
     {
         return $this->sessionModel
+            // 会话列表要显示「是谁的会话」，不预加载前端只能看到 admin_id
+            ->with(['admin:id,username,name'])
             ->where('status', 1)
             ->when($request->username, fn ($q, $v) => $q->whereHas(
                 'admin',

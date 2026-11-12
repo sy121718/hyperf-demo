@@ -24,22 +24,18 @@ class GetList
 
     public function handle(AttachmentRequest $request): mixed
     {
-        // 列表页只查必要字段，详情页才加载关联
+        // 列表页只查必要字段；attachment 目前没有详情页，
+        // 之前的 with(['category','creator']) 预加载没有任何响应字段消费
+        // （AttachmentResponse 只输出 category_id，不含关联对象），属于白查一次，已移除。
         $fields = $request->withDetail() ? ['*'] : [
             'id', 'category_id', 'file_name', 'file_path', 'file_size',
             'file_type', 'mime_type', 'storage_type', 'status', 'create_time',
         ];
 
-        $query = $this->attachmentModel
+        return $this->attachmentModel
             ->filter($request->toQueryArray())
             ->when($request->search, fn ($q) => $q->whereAny($this->attachmentModel->getSearchableFields(), 'like', "%{$request->search}%"))
-            ->sort($request->toQueryArray());
-
-        // 条件加载关联
-        if ($request->withDetail()) {
-            $query->with(['category', 'creator']);
-        }
-
-        return $query->paginate($request->pageSize(), $fields, 'page', $request->pageNumber());
+            ->sort($request->toQueryArray())
+            ->paginate($request->pageSize(), $fields, 'page', $request->pageNumber());
     }
 }

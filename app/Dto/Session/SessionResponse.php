@@ -26,6 +26,9 @@ class SessionResponse extends BaseResponse
         return [
             'id', 'admin_id', 'device_type', 'login_ip', 'location', 'isp',
             'user_agent', 'login_time', 'last_active_time', 'status',
+            // 预加载的 admin 关联，输出成 admin_name / admin_username
+            'admin_name' => 'admin.name',
+            'admin_username' => 'admin.username',
         ];
     }
 

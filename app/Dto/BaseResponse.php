@@ -117,6 +117,12 @@ abstract class BaseResponse
 
     /**
      * 按字段白名单取值，白名单为空时原样返回.
+     *
+     * 支持两种写法：
+     *   'admin_id'          —— 取当前行同名字段
+     *   'admin_name' => 'admin.name' —— 从预加载的关联对象里取，输出时改名为 admin_name
+     *
+     * 关联未预加载或值为 null 时不输出该键，避免前端拿到 null 覆盖默认文案。
      */
     protected static function pick(array $row, array $fields): array
     {
@@ -125,12 +131,40 @@ abstract class BaseResponse
         }
 
         $result = [];
-        foreach ($fields as $field) {
-            if (array_key_exists($field, $row)) {
-                $result[$field] = $row[$field];
+        foreach ($fields as $key => $field) {
+            // 数字键是普通字段名；字符串键是「输出名 => 数据路径」
+            $outputName = is_int($key) ? $field : $key;
+            $path = is_int($key) ? $field : $field;
+
+            $value = self::valueAt($row, $path);
+            if ($value !== null) {
+                $result[$outputName] = $value;
+            } elseif (is_int($key) && array_key_exists($field, $row)) {
+                // 普通字段即使为 null 也原样输出，保持响应结构稳定
+                $result[$outputName] = $row[$field];
             }
         }
 
         return $result;
+    }
+
+    /**
+     * 按点号路径取值，如 'admin.name'.
+     */
+    private static function valueAt(array $row, string $path): mixed
+    {
+        if (! str_contains($path, '.')) {
+            return $row[$path] ?? null;
+        }
+
+        $current = $row;
+        foreach (explode('.', $path) as $segment) {
+            if (! is_array($current) || ! array_key_exists($segment, $current)) {
+                return null;
+            }
+            $current = $current[$segment];
+        }
+
+        return $current;
     }
 }

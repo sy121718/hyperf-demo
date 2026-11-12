@@ -30,6 +30,8 @@ class LogResponse extends BaseResponse
             // 操作日志
             'menu_id', 'operation', 'service_method', 'api_path', 'http_method',
             'result', 'execution_time', 'create_time',
+            // 操作日志：预加载的 admin 关联，输出成 admin_name 供列表直接展示
+            'admin_name' => 'admin.name',
         ];
     }
 

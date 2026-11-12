@@ -32,6 +32,8 @@ class GetList
         };
 
         return $this->operationLogModel
+            // 列表要显示操作人姓名，不预加载的话前端只能看到 admin_id
+            ->with(['admin:id,username,name'])
             ->when($resultValue !== null, fn ($q) => $q->where('result', $resultValue))
             // result 已映射成 1/0，不能再交给通用 filter 按 success/failed 原文比较
             ->filter(array_diff_key($request->toQueryArray(), ['result' => true]))

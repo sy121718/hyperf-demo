@@ -72,6 +72,8 @@ class GetListTest extends TestCase
         };
 
         $model = Mockery::mock(SysOperationLogModel::class);
+        // 列表要展示操作人姓名，查询链最前面是 with(['admin:id,username,name'])
+        $model->shouldReceive('with')->andReturnSelf();
         $model->shouldReceive('when')->andReturnUsing(
             fn ($condition, $callback) => $condition ? $callback($recorder) : $recorder
         );
