@@ -16,6 +16,7 @@ use App\Middleware\PermissionMiddleware;
 use App\Model\Rbac\SysPermissionDictModel;
 use Hyperf\Context\ApplicationContext;
 use Hyperf\Context\Context;
+use Hyperf\DbConnection\Db;
 use Hyperf\HttpMessage\Server\Request;
 use Hyperf\HttpMessage\Server\Response;
 use Hyperf\HttpMessage\Stream\SwooleStream;
@@ -91,6 +92,52 @@ class PermissionMiddlewareTest extends TestCase
         $response = $this->runMiddleware('DELETE', '/api/admin/delete/9', ['admin:delete']);
 
         $this->assertSame(200, $response->getStatusCode());
+    }
+
+    /**
+     * 回归防线：每条带参路由归一化后，必须能查到字典里登记的权限码.
+     *
+     * 漏洞成因是「字典存占位符、中间件拿真实 URI 等值匹配」，两边格式不一致。
+     * 这条测试直接比对两边的格式：新加带参路由时如果忘记登记权限，或登记的
+     * 占位符形式与路由不一致，会在这里失败，而不是等到线上被人越权。
+     *
+     * 本用例查真实库（sys_permission_dict 是 seed 数据的一部分），
+     * 不 mock，否则失去意义。
+     */
+    public function testEveryParamRouteMatchesARegisteredPermission(): void
+    {
+        // 不能读 Router::getData()：测试容器里没有跑启动扫描，路由集合是空的，
+        // 遍历会永远通过（假阳性）。直接解析路由定义文件。
+        $source = file_get_contents(BASE_PATH . '/config/routes.php');
+        $this->assertIsString($source);
+
+        $registered = [];
+        $rows = Db::table('sys_permission_dict')
+            ->where('status', 1)
+            ->get(['http_method', 'api_path']);
+        foreach ($rows as $row) {
+            $registered[strtoupper((string) $row->http_method) . ' ' . $row->api_path] = true;
+        }
+
+        $unmatched = [];
+        preg_match_all("/Router::(get|post|put|delete|patch)\\(\\s*'([^']+)'/", $source, $matches, PREG_SET_ORDER);
+        foreach ($matches as [, $verb, $path]) {
+            if (! str_contains($path, '{')) {
+                continue;
+            }
+
+            $normalized = (string) preg_replace('/\{(\w+)(?::[^}]+)?\}/', '{$1}', $path);
+            $key = strtoupper($verb) . ' /api/' . $normalized;
+            if (! isset($registered[$key])) {
+                $unmatched[] = $key;
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $unmatched,
+            "以下带参路由在 sys_permission_dict 里查不到权限码：\n" . implode("\n", $unmatched)
+        );
     }
 
     /**
