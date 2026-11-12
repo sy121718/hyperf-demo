@@ -25,7 +25,7 @@ class SysOperationLogModel extends BaseModel
         'admin_id', 'menu_id', 'perm_dict_id', 'service_method',
         'operation', 'api_path', 'http_method', 'request_data',
         'response_data', 'ip', 'location', 'user_agent',
-        'result', 'content', 'execution_time', 'create_by', 'update_by',
+        'result', 'content', 'execution_time', 'create_by',
     ];
 
     protected array $casts = [
