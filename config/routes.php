@@ -158,6 +158,9 @@ Router::addGroup('/api/', function () {
     Router::get('cache/modules', 'App\Controller\System\CacheController@modules');
     Router::post('cache/clear', 'App\Controller\System\CacheController@clear');
 
+    // 概览（跨模块聚合，按权限决定返回哪些卡片）
+    Router::get('dashboard/overview', 'App\Controller\System\DashboardController@overview');
+
     // 日志
     Router::get('log/login', 'App\Controller\Ops\LogController@loginLog');
     Router::get('log/operation', 'App\Controller\Ops\LogController@operationLog');
