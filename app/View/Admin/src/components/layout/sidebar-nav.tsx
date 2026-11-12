@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Activity, Bell, Circle, Pin, PinOff, Settings, type LucideIcon } from "lucide-react";
+import {
+  Activity,
+  Bell,
+  Circle,
+  LayoutDashboard,
+  Pin,
+  PinOff,
+  Settings,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@rbac/ui/components/ui/button";
 import { cn } from "@rbac/ui/lib/utils";
@@ -43,6 +52,17 @@ export interface SidebarNavProps {
 /** 菜单节点取显示名，title 优先于 menu_name */
 export function groupLabel(node: MenuNode): string {
   return node.title ?? node.menu_name;
+}
+
+/**
+ * 一级项是否本身就是可跳转页面.
+ *
+ * 条件是「没有可见子项 + 不是目录 + 配了 path」。这类一级项再点开一个
+ * 只有它自己的二级面板没有意义，直接跳转更顺手。
+ */
+export function isLeafGroup(node: MenuNode): boolean {
+  const hasVisibleChildren = (node.children ?? []).some((child) => child.is_hidden !== 1);
+  return !hasVisibleChildren && node.type !== MENU_TYPE.DIRECTORY && !!node.path;
 }
 
 export function SidebarNav({ menus }: SidebarNavProps) {
@@ -125,22 +145,45 @@ export function SidebarNav({ menus }: SidebarNavProps) {
           RB
         </div>
 
+        {/* 概览不依赖后端菜单，固定在最上方，任何角色都能回到首页 */}
+        <NavLink
+          to="/"
+          end
+          title="概览"
+          className={({ isActive }) =>
+            cn(
+              "relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-[11px] leading-tight transition-all duration-150",
+              isActive
+                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+            )
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <span
+                className={cn(
+                  "absolute top-1/2 left-0 h-6 w-0.5 -translate-y-1/2 rounded-full bg-primary transition-opacity",
+                  isActive ? "opacity-100" : "opacity-0",
+                )}
+              />
+              <LayoutDashboard className={cn("size-5 transition-colors", isActive && "text-primary")} />
+              <span className="line-clamp-2 text-center">概览</span>
+            </>
+          )}
+        </NavLink>
+
         {groups.map((group) => {
           const Icon = resolveIcon(group.menu_code);
           const selected = group.id === activeId;
-          return (
-            <button
-              key={group.id}
-              type="button"
-              title={groupLabel(group)}
-              onClick={() => handleGroupClick(group.id)}
-              className={cn(
-                "relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-[11px] leading-tight transition-all duration-150",
-                selected
-                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                  : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-              )}
-            >
+          const itemClass = cn(
+            "relative flex w-[62px] flex-col items-center gap-1 rounded-lg px-1 py-2.5 text-[11px] leading-tight transition-all duration-150",
+            selected
+              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+              : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
+          );
+          const iconRow = (
+            <>
               {/* 选中态左侧的强调条，替代整块高亮的笨重感 */}
               <span
                 className={cn(
@@ -150,6 +193,33 @@ export function SidebarNav({ menus }: SidebarNavProps) {
               />
               <Icon className={cn("size-5 transition-colors", selected && "text-primary")} />
               <span className="line-clamp-2 text-center">{groupLabel(group)}</span>
+            </>
+          );
+
+          // 无子项且不是目录：一级项本身就是页面，直接跳转，
+          // 不再展开一个只有它自己的空面板
+          if (isLeafGroup(group)) {
+            return (
+              <NavLink
+                key={group.id}
+                to={group.path as string}
+                title={groupLabel(group)}
+                className={({ isActive }) => cn(itemClass, isActive && "bg-sidebar-accent")}
+              >
+                {iconRow}
+              </NavLink>
+            );
+          }
+
+          return (
+            <button
+              key={group.id}
+              type="button"
+              title={groupLabel(group)}
+              onClick={() => handleGroupClick(group.id)}
+              className={itemClass}
+            >
+              {iconRow}
             </button>
           );
         })}
