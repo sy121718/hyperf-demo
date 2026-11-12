@@ -20,39 +20,39 @@
 
 ```
 app/Service/{模块}/
-├── {子模块}/          # 按业务领域划分
-│   ├── {Action}.php   # 独立 Action 类（如 Create.php, Update.php）
-│   └── Dto/           # 数据传输对象（前端字段 ↔ 数据库字段映射）
-├── Logic/             # 复杂业务逻辑（>50 行时拆分）
-└── Utils/             # 无状态工具方法
+├── {子模块}/          # 按业务领域划分（模块下无子模块时直接放 Action）
+│   └── {Action}.php   # 独立 Action 类（如 Create.php, Update.php）
+└── Traits/            # 跨模块共用的 Action 行为
 ```
 
 **各层职责**：
 
 | 层级 | 职责 | 关键规则 |
 |------|------|----------|
-| **Controller** | 接收请求 → 调用 Action → 返回响应 | 使用 FormRequest 验证，用 `container()->get()` 调用 Action |
-| **Request** | 请求验证 + 字段转换 | 用前端字段名定义 rules()，关联 DTO，validated() 自动转换为数据库字段名 |
-| **Action** | 单一业务操作 | `handle()` 方法，用 `paramError()` 抛异常，写操作用 `Db::transaction()` |
-| **DTO** | 定义前端↔数据库字段映射 | 继承 `BaseDto`，提供 `dbToFront()` / `toDbArray()` 双向转换 |
-| **Model** | 数据定义 | 继承 `BaseModel`（在 Common/Model/ 下），利用基类 filter/sort/whereAny |
+| **Controller** | 接收请求 → 调用 Action → 返回响应 | 用 `container()->get()` 调用 Action，不碰 Model、不写业务判断 |
+| **Request DTO** | 请求验证 + 参数承载 | `app/Dto/{模块}/{模块}Request` 继承 `BaseRequestDto`，按 `getRouteAction()` 分支返回 rules |
+| **Action** | 单一业务操作 | `handle()` 方法接收 Request DTO，用 `paramError()` 抛异常，写操作用 `Db::transaction()` |
+| **Response DTO** | 输出字段裁剪 | `app/Dto/{模块}/{模块}Response` 继承 `BaseResponse`，用 `page/collection/detail/saved` 白名单输出 |
+| **Model** | 数据定义 | 继承 `App\Common\Model\BaseModel`，利用基类 filter/sort/whereAny，关联定义与查询入口都放这里 |
 
-### DTO 双向转换数据流
+### 请求到响应的数据流
+
+接口层字段统一用 snake_case（与数据库列同名），不做 camelCase 转换：
 
 ```
-前端请求 (camelCase 字段名)
+前端请求 (snake_case，如 menu_name / create_time)
     │
     ▼
-Request 验证器 (用前端字段名定义 rules)
-    │  validated() 自动通过 DTO $fields 映射
+请求 DTO (BaseRequestDto) 按路由动作选 rules 校验
+    │  validateResolved() 把校验后的值按属性声明类型写回
     ▼
-Controller 拿到数据库字段名的 $data
-    │  调用 Action
+Controller 直接把 DTO 传给 Action
+    │
     ▼
-Action 处理业务 (全程使用数据库字段名)
-    │  返回结果
+Action 用 $request->toDbArrayFiltered() 等取写库数据（全程 snake_case）
+    │  返回模型/分页器
     ▼
-DTO::dbToFront() 把数据库字段名转回前端字段名
+响应 DTO (BaseResponse) 按 listFields/detailFields/savedFields 白名单裁剪
     │
     ▼
 Controller -> success() 返回 JSON 给前端
@@ -65,8 +65,7 @@ use App\Service\Admin\Auth as AuthAction;
 
 public function login(LoginRequest $request): array
 {
-    $data = $request->validated();
-    $result = container()->get(AuthAction\Login::class)->handle($data);
+    $result = container()->get(AuthAction\Login::class)->handle($request);
     return $this->success($result, '登录成功');
 }
 ```
@@ -74,7 +73,7 @@ public function login(LoginRequest $request): array
 **命名规范**：
 - 别名：**命名空间最后一段** + `Action` 后缀（如 `Admin\Auth` → `AuthAction`，`Ops\LoginLog` → `LoginLogAction`）
 - 引用：`use App\Service\{模块}\{子模块} as {子模块}Action;`
-- 调用：`container()->get({别名}\{Action类名}::class)->handle($data)`
+- 调用：`container()->get({别名}\{Action类名}::class)->handle($request)`
 - 反例：`as IpAction`、`as PermAction`、`as AdminPermAction` —— 别名必须能原样还原成命名空间末段，不做缩写
 
 **禁止事项**：
@@ -137,48 +136,56 @@ class SysAdminModel extends BaseModel
 **Action 查询标准写法**：
 
 ```php
-public function handle(array $data = [])
+public function handle(RoleRequest $request): mixed
 {
-    $search = $data['search'] ?? null;
+    // 列表页只查必要字段，详情模式才取全字段
+    $fields = $request->withDetail() ? ['*'] : [
+        'id', 'role_code', 'role_name', 'status', 'sort_order', 'remark', 'create_time',
+    ];
 
     return $this->roleModel
-        ->with(['creator', 'updater'])
-        ->filter($data)
-        ->when($search, fn($q) => $q->whereAny(
-            $this->roleModel->getSearchableFields(), 'like', "%{$search}%"
+        ->filter($request->toQueryArray())
+        ->when($request->search, fn ($q) => $q->whereAny(
+            $this->roleModel->getSearchableFields(),
+            'like',
+            "%{$request->search}%"
         ))
-        ->sort($data)
-        ->paginate($data['limit'] ?? 10, ['*'], 'page', $data['page'] ?? 1);
+        ->sort($request->toQueryArray())
+        ->paginate($request->pageSize(), $fields, 'page', $request->pageNumber());
 }
 ```
 
 **关键要点**：
 1. **白名单防护**：`whereableFields`、`searchableFields`、`orderableFields` 防止 SQL 注入
-2. **提前处理空值**：`$search = $data['search'] ?? null;` 简化 `when()` 判断
+2. **参数来源**：列表参数用 `toQueryArray()`（业务字段 + page/limit/search/sort），写库数据用 `toDbArrayFiltered()`
 3. **链式调用**：保持查询构建器的流畅性
 4. **whereAny**：通过 BaseModel 的 `scopeWhereAny` 实现（Hyperf ORM 不支持原生 whereAny）
+5. **多表数据**：优先在 Model 里定义关联并用 `with()` 预加载，避免在 Action 里手写 join
 
-**前后端字段名转换**：
+**请求 DTO 与响应 DTO 分工**：
 
 ```php
-// DTO 配置：前端字段 → 数据库字段
-protected static array $fields = [
-    'menuName' => 'menu_name',  // 前端 camelCase → 数据库 snake_case
-    'mobile' => 'phone',        // 字段名不同时映射
-];
-
-// 验证器：使用前端字段名验证
+// 请求侧：rules 的键就是 DTO 属性名，也就是数据库列名
 public function rules(): array
 {
-    return ['menuName' => 'required|string', 'mobile' => 'nullable'];
+    return match ($this->getRouteAction()) {
+        'create' => ['menu_name' => 'required|string|max:50', ...],
+        'update' => ['id' => 'required|integer|min:1', 'menu_name' => 'nullable|string|max:50', ...],
+        default => [],
+    };
 }
 
-// Controller：validated() 自动转换
-$data = $request->validated();  // 自动转换为数据库字段名
-
-// Controller：返回时用 DTO 转回前端字段名
-return $this->success(MenuDto::dbToFront($result->toArray()), '获取成功');
+// 响应侧：白名单决定输出字段，不在白名单里的列不会出现在 JSON 中
+class MenuResponse extends BaseResponse
+{
+    protected static function listFields(): array
+    {
+        return ['id', 'menu_name', 'parent_id', 'type', 'status', 'create_time'];
+    }
+}
 ```
+
+响应 DTO 的四个入口：`page(分页器)` → `{total, list}`、`collection(数组)`、`detail(单条)`、`saved(写操作回执，默认只回 id)`。
 
 **辅助函数**：
 - `paramError($msg, $code=400)`: 抛业务异常（全局）
@@ -197,45 +204,56 @@ return $this->success(MenuDto::dbToFront($result->toArray()), '获取成功');
 | `Hash::check()` | `password_verify()` |
 | `request()->ip()` | `$request->getServerParams()['remote_addr']` |
 | `whereAny()` | `->whereAny()` (BaseModel scopeWhereAny) |
-| FormRequest | `app/Request/BaseRequest` (继承 Hyperf FormRequest) |
+| FormRequest | `app/Dto/{模块}/{模块}Request` (继承 `BaseRequestDto`) |
 
 ## 目录结构
 
 ```
 app/
-├── Controller/                    # 控制器层
+├── Controller/                    # 控制器层（只调 Action、组织响应）
 │   ├── AbstractController.php     # 基础控制器（success 方法）
-│   └── System/                    # 系统管理模块
-├── Request/                       # 请求验证层（独立目录）
-│   ├── BaseRequest.php            # 基础请求（关联 DTO 自动转换）
-│   └── System/                    # 按模块分目录
+│   ├── System/                    # 系统管理：Admin/Role/Menu/Permission/Dict/Config/Cache/CronJob/Attachment/Auth
+│   ├── Notify/                    # 通知：Notice/Email
+│   └── Ops/                       # 运维：Log/Session
+├── Dto/                           # 请求 DTO + 响应 DTO（每模块一对）
+│   ├── BaseRequestDto.php         # 请求基类（校验 + hydrate + toDbArray）
+│   ├── BaseResponse.php           # 响应基类（page/collection/detail/saved）
+│   └── {模块}/{模块}Request.php / {模块}Response.php
 ├── Service/                       # 业务层（Action 原子化）
-│   ├── Admin/Auth/                # 认证
-│   ├── Admin/Manage/              # 管理员 CRUD
-│   │   └── Dto/                   # DTO 与 Action 同级
-│   ├── Role/                      # 角色
-│   ├── Menu/                      # 菜单
-│   ├── Permission/                # 权限字典
-│   └── Log/                       # 日志
-├── Model/                         # 数据模型层（业务模型）
-│   ├── Admin/                     # SysAdminModel, SysAdminRoleModel, SysAdminSessionsModel
-│   ├── Role/                      # SysRoleModel, SysRoleMenuModel
-│   ├── Menu/                      # SysMenuModel, SysMenuPermissionModel
-│   ├── Permission/                # SysPermissionDictModel
-│   └── Log/                       # SysLoginLogModel, SysOperationLogModel
+│   ├── Admin/Auth|Manage|Permission|Profile/
+│   ├── Role/ Menu/ Permission/ Dict/ Config/ Cache/ CronJob/
+│   ├── Attachment/ Notice/ Email/Send|Template/
+│   ├── Ops/LoginLog|OperationLog|Session/
+│   ├── Log/                       # 操作日志记录
+│   ├── IpBlacklist/
+│   └── Traits/                    # 跨模块 Action 行为（如 CheckOwnership）
+├── Model/                         # 数据模型层
+│   ├── Admin/                     # SysAdminModel, SysAdminRoleModel, SysAdminSessionsModel,
+│   │                              # SysLoginLogModel, SysOperationLogModel
+│   ├── Rbac/                      # SysRoleModel, SysMenuModel, SysPermissionDictModel
+│   ├── System/                    # SysConfigModel, SysDictModel, SysDictItemModel, IpBlacklistModel
+│   ├── Notify/                    # NoticeModel, NoticeTargetModel, NoticeReadModel,
+│   │                              # EmailTemplateModel, EmailSendRecordModel, EmailSendRecipientModel
+│   ├── Attachment/                # SysAttachmentModel, SysFileCategoryModel
+│   └── CronJob/                   # SysCronJobModel
 ├── Middleware/                    # 中间件
 │   ├── JwtAuthMiddleware.php      # JWT 认证 + Session 验证
 │   ├── PermissionMiddleware.php   # 按钮级权限验证
-│   └── CorsMiddleware.php         # 跨域
+│   ├── CorsMiddleware.php         # 跨域
+│   └── FrontendMiddleware.php     # 前端静态资源
 ├── Exception/                     # 异常处理
 │   ├── BusinessException.php      # 业务异常类
 │   └── Handler/AppExceptionHandler.php
 ├── Common/                        # 公共基础设施
-│   ├── Model/BaseModel.php        # 模型基类
-│   ├── Dto/BaseDto.php            # DTO 基类
-│   ├── Utils/                     # 工具类
+│   ├── Model/BaseModel.php        # 模型基类（filter/sort/whereAny/findOrNotFound/buildTree）
+│   ├── Utils/                     # 工具类（TreeBuilder、条件解析器、字段唯一性检查）
+│   ├── CacheKeys.php              # 缓存 key 常量 + flush
 │   └── helpers.php                # 全局辅助函数
 ```
+
+**权限存储方式**：角色权限存在 `sys_role.permission_codes`（已配 array cast 的 JSON 列），
+没有 `sys_role_menu` / `sys_menu_permission` 关联表。权限码的统一解析入口是
+`SysAdminModel::permissionCodes()`，菜单过滤与权限中间件都走它。
 
 ## MCP 工具与环境说明
 
@@ -277,11 +295,11 @@ SELECT * FROM sys_admin WHERE id = 1;
    └─ 搜索现有代码（Service/Utils/Models），避免重复造轮子
 
 2. 开发阶段
-   ├─ DTO（定义字段映射：前端 → 数据库）
    ├─ Model（配置字段、关联、查询白名单）
-   ├─ Request（使用前端字段名定义验证规则，关联 DTO）
+   ├─ 请求 DTO（按路由动作定义 rules，声明 snake_case 属性）
+   ├─ 响应 DTO（定义 listFields / detailFields / savedFields）
    ├─ Actions（GetList, Create, Update, Delete）
-   └─ Controller（使用 $request->validated() 自动获取转换后数据）
+   └─ Controller（把 DTO 直传 Action，用响应 DTO 组装输出）
 
 3. 测试阶段
    ├─ 编写单元测试
@@ -293,10 +311,11 @@ SELECT * FROM sys_admin WHERE id = 1;
 
 ## 开发检查清单
 
-- [ ] 结构：符合 Service/Action/Logic/Utils 结构
+- [ ] 结构：每个业务操作一个 Action 类，放在 `app/Service/{模块}/`
 - [ ] 类型：开启 `strict_types=1`，完整类型注解
 - [ ] 异常：使用 `paramError()` 而非 `throw new Exception`
 - [ ] 事务：写操作用 `Db::transaction()` 包裹
 - [ ] 调用：Controller 用 `container()->get()` + 命名空间别名
-- [ ] 转换：Request 关联 DTO，返回时用 `Dto::dbToFront()`
+- [ ] 输出：Controller 用响应 DTO 的 `page/collection/detail/saved` 裁剪字段
+- [ ] 边界：Controller 不引用 Model、不写业务判断，只协调 Action
 - [ ] 测试：模块完成后测试必须通过
