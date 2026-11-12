@@ -73,22 +73,22 @@ abstract class BaseRequestDto extends FormRequest
         }
     }
 
-    public function __get($name): mixed
+    public function __get(mixed $name): mixed
     {
         return Context::get($this->contextKey($name));
     }
 
-    public function __set($name, $value): void
+    public function __set(mixed $name, mixed $value): void
     {
         Context::set($this->contextKey($name), $value);
     }
 
-    public function __isset($name): bool
+    public function __isset(string $name): bool
     {
         return Context::has($this->contextKey($name));
     }
 
-    public function __unset($name): void
+    public function __unset(string $name): void
     {
         Context::destroy($this->contextKey($name));
     }
