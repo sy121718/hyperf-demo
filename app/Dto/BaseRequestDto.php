@@ -49,6 +49,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 排序：['field' => 'id', 'direction' => 'desc'].
+     * @var null|array{field?: string, direction?: string}
      */
     public ?array $sort = null;
 
@@ -169,6 +170,7 @@ abstract class BaseRequestDto extends FormRequest
      *
      * 新建对象的属性直接留在实例上，不写协程上下文：批量场景一次会构造多个
      * 同类型实例，它们必须各自持有自己的数据。
+     * @param array<string, mixed> $data
      */
     public static function fromArray(array $data): static
     {
@@ -181,6 +183,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 只输出本 DTO 声明的业务字段.
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -193,6 +196,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 业务字段 + 通用查询参数（page/limit/search/sort），供列表类 Action 使用.
+     * @return array<string, mixed>
      */
     public function toQueryArray(): array
     {
@@ -217,6 +221,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 转成可直接写库的数组（已剔除虚拟字段）.
+     * @return array<string, mixed>
      */
     public function toDbArray(): array
     {
@@ -225,6 +230,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 转成可直接写库的数组，过滤掉 null（用于 update 场景）.
+     * @return array<string, mixed>
      */
     public function toDbArrayFiltered(): array
     {
@@ -233,6 +239,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 通用列表参数规则（page/limit/search/sort）.
+     * @return array<string, string>
      */
     protected function paginationRules(): array
     {
@@ -251,6 +258,7 @@ abstract class BaseRequestDto extends FormRequest
      * 校验数据 = 路由参数 + 请求参数（请求参数优先）.
      *
      * update/delete 这类场景的主键在路由里，不并进来 required 规则永远无法通过。
+     * @return array<string, mixed>
      */
     protected function validationData(): array
     {
@@ -265,6 +273,7 @@ abstract class BaseRequestDto extends FormRequest
 
     /**
      * 按属性声明的类型转换值.
+     * @param ReflectionClass<*> $ref
      */
     protected function castValue(mixed $value, ReflectionClass $ref, string $name): mixed
     {
@@ -324,6 +333,7 @@ abstract class BaseRequestDto extends FormRequest
      *
      * 这里直接写实例属性，不能走 unset：fromArray() 建的对象属性还在实例上，
      * 一旦 unset 就会落到 __set 存进协程上下文，批量场景的几个实例会互相覆盖。
+     * @param array<string, mixed> $data
      */
     protected function fillFrom(array $data): void
     {
