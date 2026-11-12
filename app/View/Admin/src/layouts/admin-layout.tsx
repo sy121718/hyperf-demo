@@ -64,11 +64,13 @@ export default function AdminLayout({ menus }: { menus: MenuNode[] }) {
   };
 
   return (
-    <div className="flex min-h-svh">
+    // 固定视口高度，让 main 成为唯一滚动容器；
+    // 这样列表页的 sticky 工具栏才有可吸附的滚动上下文
+    <div className="flex h-svh overflow-hidden">
       <SidebarNav menus={menus} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur md:px-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-background/80 px-4 backdrop-blur md:px-6">
           {/* 窄屏侧边栏收起，导航改走抽屉 */}
           <div className="flex items-center gap-2">
             <div className="md:hidden">

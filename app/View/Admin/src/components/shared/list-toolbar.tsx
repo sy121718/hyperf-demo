@@ -12,6 +12,7 @@ import {
   SheetTrigger,
 } from "@rbac/ui/components/ui/sheet";
 import { SearchInput } from "@/components/shared/search-input";
+import { cn } from "@rbac/ui/lib/utils";
 import { useIsMobile } from "@/lib/use-responsive-list";
 
 /**
@@ -51,9 +52,13 @@ export function ListToolbar({
 }: ListToolbarProps) {
   const isMobile = useIsMobile();
 
+  // 页面滚动容器是 main，工具栏吸顶时必须是实色背景，否则列表内容会从下面透出来
+  const stickyClass =
+    "sticky top-0 z-20 -mx-4 bg-background px-4 pt-2 pb-2 shadow-[0_1px_0_0_var(--border)] md:-mx-6 md:px-6 lg:-mx-8 lg:px-8";
+
   if (isMobile) {
     return (
-      <div className="space-y-3">
+      <div className={cn("space-y-3 pt-1", stickyClass)}>
         <div className="flex items-center gap-2">
           {leading}
           <SearchInput
@@ -103,7 +108,7 @@ export function ListToolbar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={cn("flex flex-wrap items-center gap-2 pt-1", stickyClass)}>
       {leading}
       <SearchInput value={search} onChange={onSearchChange} placeholder={searchPlaceholder} />
       {filters}
