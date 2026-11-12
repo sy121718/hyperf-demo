@@ -33,22 +33,15 @@ class GetMine
         $adminId = (int) currentUser('id');
         $adminId > 0 || paramError('用户未登录', 401);
 
-        $admin = $this->adminModel->findOrNotFound($adminId, '用户', ['roles']);
+        // permissionCodes() 内部自带 roles 查询（带 status=1 条件），这里无需预加载
+        $admin = $this->adminModel->findOrNotFound($adminId, '用户');
 
-        $codes = [];
-        foreach ($admin->roles as $role) {
-            if ((int) $role->status !== 1) {
-                continue;
-            }
-            foreach ($role->permission_codes ?? [] as $code) {
-                $codes[] = $code;
-            }
-        }
-
+        // 走模型上的唯一入口，不要在这里再手写一遍「过滤停用角色 + 去重」，
+        // 否则这里的口径和菜单过滤、权限中间件会各自漂移。
         return [
             'admin_id' => $adminId,
             'is_admin' => (int) $admin->is_admin,
-            'permission_codes' => array_values(array_unique($codes)),
+            'permission_codes' => $admin->permissionCodes(),
         ];
     }
 }
