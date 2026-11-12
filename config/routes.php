@@ -60,7 +60,6 @@ Router::addGroup('/api/', function () {
     Router::delete('role/delete/{id:\d+}', 'App\Controller\System\RoleController@delete');
     Router::post('role/batch-delete', 'App\Controller\System\RoleController@batchDelete');
     Router::post('role/assign-menus', 'App\Controller\System\RoleController@assignMenus');
-    Router::post('role/remove-menu', 'App\Controller\System\RoleController@removeMenu');
     Router::post('role/assign-to-admin', 'App\Controller\System\RoleController@assignToAdmin');
     Router::post('role/remove-from-admin', 'App\Controller\System\RoleController@removeFromAdmin');
 
@@ -71,8 +70,6 @@ Router::addGroup('/api/', function () {
     Router::put('menu/update/{id:\d+}', 'App\Controller\System\MenuController@update');
     Router::delete('menu/delete/{id:\d+}', 'App\Controller\System\MenuController@delete');
     Router::post('menu/batch-delete', 'App\Controller\System\MenuController@batchDelete');
-    Router::post('menu/assign-permissions', 'App\Controller\System\MenuController@assignPermissions');
-    Router::post('menu/remove-permission', 'App\Controller\System\MenuController@removePermission');
 
     // 权限字典
     Router::get('permission/tree', 'App\Controller\System\PermissionController@tree');
