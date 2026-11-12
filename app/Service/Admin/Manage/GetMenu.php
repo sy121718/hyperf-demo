@@ -46,13 +46,17 @@ class GetMenu
         } else {
             $permissionCodes = $this->getUserPermissionCodes($userId);
 
+            // 过滤条件必须始终生效：之前写成 when(! empty($permissionCodes), ...)，
+            // 没有权限码的用户会跳过整个过滤，直接拿到全部菜单。
+            // 空权限码时只保留目录（type=0，仅用于分组，不含可访问页面）。
             $menus = $this->menuModel
                 ->where('status', 1)
-                ->when(! empty($permissionCodes), function ($q) use ($permissionCodes) {
-                    $q->where(function ($sub) use ($permissionCodes) {
-                        $sub->where('type', 0)
-                            ->orWhereIn('permission_code', $permissionCodes);
-                    });
+                ->where(function ($sub) use ($permissionCodes) {
+                    $sub->where('type', 0);
+
+                    if (! empty($permissionCodes)) {
+                        $sub->orWhereIn('permission_code', $permissionCodes);
+                    }
                 })
                 ->orderBy('sort_order', 'asc')
                 ->get()
